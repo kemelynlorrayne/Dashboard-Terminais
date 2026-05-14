@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Terminais — Operações Logísticas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; color: #1a1a2e; min-height: 100vh; }
+header { background: #0d1b2a; color: #fff; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
+header .subtitle { font-size: 12px; color: #8ca0b3; }
+header .update { font-size: 11px; color: #6b8fa8; text-align: right; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 24px 48px; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 24px; background: #fff; border-radius: 10px; padding: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tab { flex: 1; padding: 10px 8px; font-size: 13px; font-weight: 500; border: none; background: none; cursor: pointer; color: #64748b; border-radius: 7px; transition: all 0.18s; }
+.tab.active { background: #0d1b2a; color: #fff; }
+.tab:hover:not(.active) { background: #f1f5f9; color: #1a1a2e; }
+.panel { display: none; }
+.panel.active { display: block; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.metric { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.metric .label { font-size: 11px; color: #64748b; margin-bottom: 6px; line-height: 1.4; }
+.metric .value { font-size: 22px; font-weight: 600; color: #0d1b2a; }
+.metric .value.neg { color: #dc2626; }
+.metric .value.pos { color: #16a34a; }
+.section-title { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; margin: 24px 0 10px; }
+.chart-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 16px; }
+.chart-wrap { position: relative; width: 100%; height: 200px; }
+.tables-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.mini-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.mini-table .t-head { background: #f8fafc; font-size: 11px; font-weight: 600; color: #475569; padding: 8px 12px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #e2e8f0; }
+.mini-table .t-head.danger { color: #dc2626; }
+.mini-table table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.mini-table td { padding: 6px 12px; border-top: 1px solid #f1f5f9; color: #1a1a2e; }
+.mini-table td:first-child { color: #64748b; }
+.mini-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.mini-table .total-row td { font-weight: 600; background: #f8fafc; }
+.full-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 16px; }
+.full-table table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.full-table th { background: #f8fafc; font-size: 11px; font-weight: 600; padding: 9px 14px; color: #475569; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.full-table th:not(:first-child), .full-table td:not(:first-child) { text-align: right; }
+.full-table td { padding: 7px 14px; border-top: 1px solid #f1f5f9; color: #1a1a2e; font-variant-numeric: tabular-nums; }
+.full-table .total-row td { font-weight: 600; background: #f8fafc; }
+.scroll-table { max-height: 340px; overflow-y: auto; }
+.badge-warn { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; font-weight: 600; }
+.badge-ok { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #d1fae5; color: #065f46; font-weight: 600; }
+.badge-danger { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #fee2e2; color: #991b1b; font-weight: 600; }
+@media (max-width: 700px) { .tables-row { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2, 1fr); } header { flex-direction: column; gap: 6px; align-items: flex-start; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Dashboard — Operações Logísticas Terminais</h1>
+    <div class="subtitle">TECIAP · Ultracargo · Raízen / Centro Oeste · Ferrovia</div>
+  </div>
+  <div class="update">Última atualização<br>14/05/2026 — 10:19</div>
+</header>
+
+<div class="container">
+  <div class="tab-bar">
+    <button class="tab active" onclick="showPanel('teciap', this)">TECIAP</button>
+    <button class="tab" onclick="showPanel('ultracargo', this)">Ultracargo</button>
+    <button class="tab" onclick="showPanel('raizen', this)">Raízen / Centro Oeste</button>
+    <button class="tab" onclick="showPanel('ferrovia', this)">Ferrovia</button>
+  </div>
+
+  <!-- ===== TECIAP ===== -->
+  <div id="panel-teciap" class="panel active">
+    <div class="metrics">
+      <div class="metric"><div class="label">Vol. recebido caminhões</div><div class="value">28.124 m³</div></div>
+      <div class="metric"><div class="label">Expedido ferrovia</div><div class="value">24.747 m³</div></div>
+      <div class="metric"><div class="label">Expedido rodo/transf</div><div class="value">177 m³</div></div>
+      <div class="metric"><div class="label">Take or pay / mês</div><div class="value">35.000 m³</div></div>
+      <div class="metric"><div class="label">Saldo take or pay</div><div class="value neg">-6.876 m³</div></div>
+      <div class="metric"><div class="label">Backlog/dia recebimento</div><div class="value">12.317 m³</div></div>
+      <div class="metric"><div class="label">Volume projetado</div><div class="value">67.065 m³</div></div>
+      <div class="metric"><div class="label">Trânsito caminhões</div><div class="value">3.209 m³</div></div>
+      <div class="metric"><div class="label">Estática contratada | Hidratado</div><div class="value">6.000 m³</div></div>
+      <div class="metric"><div class="label">Estoque atual | Hidratado</div><div class="value">5.048 m³</div></div>
+      <div class="metric"><div class="label">Estática contratada | Anidro</div><div class="value">1.000 m³</div></div>
+      <div class="metric"><div class="label">Estoque atual | Anidro</div><div class="value">53 m³</div></div>
+      <div class="metric"><div class="label">Giro</div><div class="value">4,02</div></div>
+    </div>
+
+    <div class="section-title">Descarga rodoviária — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-teciap-rodo"></canvas></div></div>
+
+    <div class="section-title">Carregamentos RODO/FERRO/TRANSF — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-teciap-carr"></canvas></div></div>
+
+    <div class="section-title">Abertura de estoque — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-teciap-estoque"></canvas></div></div>
+
+    <div class="section-title">Carregamento usina</div>
+    <div class="tables-row">
+      <div class="mini-table">
+        <div class="t-head">Realizado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D 14/05</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>D-1 13/05</td><td>1.209</td><td>981</td><td>2.190</td></tr>
+          <tr><td>D-2 12/05</td><td>1.015</td><td>1.320</td><td>2.335</td></tr>
+          <tr><td>D-3 11/05</td><td>897</td><td>107</td><td>1.004</td></tr>
+          <tr class="total-row"><td>Total</td><td>3.120</td><td>2.409</td><td>5.529</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head">Data prevista</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D 14/05</td><td>239</td><td>936</td><td>1.175</td></tr>
+          <tr><td>D+1 15/05</td><td>1.209</td><td>-</td><td>1.209</td></tr>
+          <tr><td>D+2 16/05</td><td>482</td><td>-</td><td>482</td></tr>
+          <tr class="total-row"><td>Total</td><td>1.929</td><td>936</td><td>2.866</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head danger">Atrasado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D-1 13/05</td><td>-</td><td>283</td><td>283</td></tr>
+          <tr><td>D-2 12/05</td><td>60</td><td>-</td><td>60</td></tr>
+          <tr><td>D-3 11/05</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>&gt;D-3</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr class="total-row"><td>Total</td><td>60</td><td>283</td><td>343</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">Quebra mensal</div>
+    <div class="full-table"><table>
+      <tr><th>Local</th><th>Entrada (m³)</th><th>Quebra (m³)</th><th>Índice</th></tr>
+      <tr><td>Sinop</td><td>19.984</td><td>20</td><td>0,10%</td></tr>
+      <tr><td>Nova Mutum</td><td>8.140</td><td>8</td><td>0,10%</td></tr>
+      <tr class="total-row"><td>Total</td><td>28.124</td><td>28</td><td>0,10%</td></tr>
+    </table></div>
+  </div>
+
+  <!-- ===== ULTRACARGO ===== -->
+  <div id="panel-ultracargo" class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="label">Vol. recebido caminhões</div><div class="value">16.097 m³</div></div>
+      <div class="metric"><div class="label">Expedido</div><div class="value">12.925 m³</div></div>
+      <div class="metric"><div class="label">Take or pay / mês</div><div class="value">25.000 m³</div></div>
+      <div class="metric"><div class="label">Saldo take or pay</div><div class="value neg">-8.903 m³</div></div>
+      <div class="metric"><div class="label">Backlog/dia recebimento</div><div class="value">4.807 m³</div></div>
+      <div class="metric"><div class="label">Volume projetado</div><div class="value">38.385 m³</div></div>
+      <div class="metric"><div class="label">Trânsito caminhões</div><div class="value">1.906 m³</div></div>
+      <div class="metric"><div class="label">Estática contratada | Hidratado</div><div class="value">5.000 m³</div></div>
+      <div class="metric"><div class="label">Estoque atual | Hidratado</div><div class="value">4.210 m³</div></div>
+      <div class="metric"><div class="label">Giro</div><div class="value">3,22</div></div>
+    </div>
+
+    <div class="section-title">Descarga rodoviária — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-ultra-rodo"></canvas></div></div>
+
+    <div class="section-title">Carregamentos ferro — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-ultra-ferro"></canvas></div></div>
+
+    <div class="section-title">Abertura de estoque — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-ultra-estoque"></canvas></div></div>
+
+    <div class="section-title">Carregamento usina</div>
+    <div class="tables-row">
+      <div class="mini-table">
+        <div class="t-head">Realizado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D-1 13/05</td><td>169</td><td>6</td><td>175</td></tr>
+          <tr><td>D-2 12/05</td><td>1.293</td><td>417</td><td>1.710</td></tr>
+          <tr><td>D-3 11/05</td><td>1.312</td><td>755</td><td>2.067</td></tr>
+          <tr class="total-row"><td>Total</td><td>2.774</td><td>1.178</td><td>3.953</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head">Data prevista</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D 14/05</td><td>1.003</td><td>6</td><td>1.009</td></tr>
+          <tr><td>D+1 15/05</td><td>120</td><td>-</td><td>120</td></tr>
+          <tr><td>D+2 16/05</td><td>61</td><td>-</td><td>61</td></tr>
+          <tr class="total-row"><td>Total</td><td>1.185</td><td>6</td><td>1.191</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head danger">Atrasado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D-1 13/05</td><td>415</td><td>240</td><td>655</td></tr>
+          <tr><td>D-2 12/05</td><td>60</td><td>-</td><td>60</td></tr>
+          <tr><td>D-3 11/05</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td>&gt;D-3</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr class="total-row"><td>Total</td><td>476</td><td>240</td><td>715</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">Quebra mensal</div>
+    <div class="full-table"><table>
+      <tr><th>Local</th><th>Entrada (m³)</th><th>Quebra (m³)</th><th>Índice</th></tr>
+      <tr><td>Sinop</td><td>9.255</td><td>10</td><td>0,11%</td></tr>
+      <tr><td>Nova Mutum</td><td>6.842</td><td>2</td><td>0,03%</td></tr>
+      <tr class="total-row"><td>Total</td><td>16.097</td><td>12</td><td>0,08%</td></tr>
+    </table></div>
+  </div>
+
+  <!-- ===== RAIZEN ===== -->
+  <div id="panel-raizen" class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="label">Vol. recebido caminhões</div><div class="value">14.704 m³</div></div>
+      <div class="metric"><div class="label">Expedido vagões</div><div class="value">13.202 m³</div></div>
+      <div class="metric"><div class="label">Contrato / mês</div><div class="value">29.417 m³</div></div>
+      <div class="metric"><div class="label">Saldo contrato/mês</div><div class="value neg">-14.713 m³</div></div>
+      <div class="metric"><div class="label">Backlog/dia expedição VTs</div><div class="value neg">-83 m³</div></div>
+      <div class="metric"><div class="label">Volume projetado</div><div class="value">31.481 m³</div></div>
+      <div class="metric"><div class="label">Trânsito caminhões</div><div class="value">541 m³</div></div>
+      <div class="metric"><div class="label">Estática contratada</div><div class="value">1.250 m³</div></div>
+      <div class="metric"><div class="label">Estoque atual</div><div class="value">1.860 m³</div></div>
+      <div class="metric"><div class="label">Giro</div><div class="value">11,76</div></div>
+    </div>
+
+    <div class="section-title">Descarga rodoviária — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-raizen-rodo"></canvas></div></div>
+
+    <div class="section-title">Carregamento VT — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-raizen-vt"></canvas></div></div>
+
+    <div class="section-title">Abertura de estoque — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-raizen-estoque"></canvas></div></div>
+
+    <div class="section-title">Carregamento usina</div>
+    <div class="tables-row">
+      <div class="mini-table">
+        <div class="t-head">Realizado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D-1 13/05</td><td>286</td><td>119</td><td>406</td></tr>
+          <tr><td>D-2 12/05</td><td>389</td><td>226</td><td>615</td></tr>
+          <tr><td>D-3 11/05</td><td>1.133</td><td>990</td><td>2.123</td></tr>
+          <tr class="total-row"><td>Total</td><td>1.808</td><td>1.335</td><td>3.143</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head">Data prevista</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D 14/05</td><td>61</td><td>-</td><td>61</td></tr>
+          <tr><td>D+1 15/05</td><td>238</td><td>-</td><td>238</td></tr>
+          <tr><td>D+2 16/05</td><td>61</td><td>-</td><td>61</td></tr>
+          <tr class="total-row"><td>Total</td><td>360</td><td>-</td><td>360</td></tr>
+        </table>
+      </div>
+      <div class="mini-table">
+        <div class="t-head danger">Atrasado</div>
+        <table>
+          <tr><td>Data</td><td>Sinop</td><td>Nova Mutum</td><td>Total</td></tr>
+          <tr><td>D-2 12/05</td><td>61</td><td>-</td><td>61</td></tr>
+          <tr><td>D-3 11/05</td><td>-</td><td>61</td><td>61</td></tr>
+          <tr><td>&gt;D-3</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr class="total-row"><td>Total</td><td>61</td><td>61</td><td>122</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">Quebra mensal</div>
+    <div class="full-table"><table>
+      <tr><th>Local</th><th>Entrada (m³)</th><th>Quebra (m³)</th><th>Índice</th></tr>
+      <tr><td>Sinop</td><td>6.758</td><td>8</td><td>0,12%</td></tr>
+      <tr><td>Nova Mutum</td><td>7.946</td><td>6</td><td>0,08%</td></tr>
+      <tr class="total-row"><td>Total</td><td>14.704</td><td>14</td><td>0,09%</td></tr>
+    </table></div>
+  </div>
+
+  <!-- ===== FERROVIA ===== -->
+  <div id="panel-ferrovia" class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="label">Vol. carregado TECIAP/Ultracargo</div><div class="value">37.672 m³</div></div>
+      <div class="metric"><div class="label">Vol. descarregado em Paulínia</div><div class="value">40.175 m³</div></div>
+      <div class="metric"><div class="label">Contrato de transporte/mês</div><div class="value">88.350 m³</div></div>
+      <div class="metric"><div class="label">Saldo contrato transporte</div><div class="value neg">-50.678 m³</div></div>
+      <div class="metric"><div class="label">Backlog/dia carregamento VT</div><div class="value neg">-2.228 m³</div></div>
+      <div class="metric"><div class="label">Volume projetado</div><div class="value">89.833 m³</div></div>
+      <div class="metric"><div class="label">Trânsito ferroviário</div><div class="value">19.561 m³</div></div>
+      <div class="metric"><div class="label">Vagões em trânsito</div><div class="value">206</div></div>
+      <div class="metric"><div class="label">Média carregamento mês</div><div class="value">2.898 m³</div></div>
+      <div class="metric"><div class="label">Volume mínimo Rumo/mês</div><div class="value">83.933 m³</div></div>
+      <div class="metric"><div class="label">Saldo volume mínimo Rumo</div><div class="value neg">-46.261 m³</div></div>
+      <div class="metric"><div class="label">Backlog/dia mínimo Rumo</div><div class="value neg">-233 m³</div></div>
+    </div>
+
+    <div class="section-title">Carregamento ferroviário TECIAP/Ultracargo — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-ferro-carr"></canvas></div></div>
+
+    <div class="section-title">Descarga ferroviária terminais — maio/2026</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="c-ferro-desc"></canvas></div></div>
+
+    <div class="section-title">Detalhe por operador</div>
+    <div class="full-table scroll-table"><table>
+      <tr><th>Data</th><th>Logum</th><th>Opla</th><th>TERCOM</th><th>Ipiranga</th><th>Raízen Energia</th><th>Total</th></tr>
+      <tr><td>01/05</td><td>1.781</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.781</td></tr>
+      <tr><td>02/05</td><td>2.896</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2.896</td></tr>
+      <tr><td>03/05</td><td>5.048</td><td>-</td><td>-</td><td>-</td><td>-</td><td>5.048</td></tr>
+      <tr><td>04/05</td><td>2.190</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2.190</td></tr>
+      <tr><td>05/05</td><td>2.512</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2.512</td></tr>
+      <tr><td>06/05</td><td>2.265</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2.265</td></tr>
+      <tr><td>07/05</td><td>2.320</td><td>392</td><td>-</td><td>-</td><td>-</td><td>2.712</td></tr>
+      <tr><td>08/05</td><td>1.928</td><td>810</td><td>-</td><td>-</td><td>-</td><td>2.738</td></tr>
+      <tr><td>09/05</td><td>2.528</td><td>412</td><td>-</td><td>-</td><td>-</td><td>2.940</td></tr>
+      <tr><td>10/05</td><td>2.620</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2.620</td></tr>
+      <tr><td>11/05</td><td>3.064</td><td>-</td><td>-</td><td>-</td><td>-</td><td>3.064</td></tr>
+      <tr><td>12/05</td><td>2.521</td><td>1.022</td><td>-</td><td>-</td><td>-</td><td>3.542</td></tr>
+      <tr><td>13/05</td><td>2.076</td><td>1.286</td><td>-</td><td>-</td><td>-</td><td>3.362</td></tr>
+      <tr class="total-row"><td>Total</td><td>33.750</td><td>3.922</td><td>-</td><td>-</td><td>-</td><td>37.672</td></tr>
+    </table></div>
+
+    <div class="section-title">Take or pay — monitoramento anual ferrovia</div>
+    <div class="full-table"><table>
+      <tr><th>Mês</th><th>Faturado</th><th>Mín. contratual</th><th>Índice</th><th>Contrato</th><th>Índice</th></tr>
+      <tr><td>Janeiro</td><td>51.418</td><td>60.183</td><td>85%</td><td>63.350</td><td>81%</td></tr>
+      <tr><td>Fevereiro</td><td>54.736</td><td>83.933</td><td>65%</td><td>88.350</td><td>62%</td></tr>
+      <tr><td>Março</td><td>75.133</td><td>83.933</td><td>90%</td><td>88.350</td><td>85%</td></tr>
+      <tr><td>Abril</td><td>87.098</td><td>83.933</td><td>104%</td><td>88.350</td><td>99%</td></tr>
+      <tr><td>Maio</td><td>37.672</td><td>83.933</td><td>45%</td><td>88.350</td><td>43%</td></tr>
+      <tr><td>Junho</td><td>-</td><td>107.683</td><td>0%</td><td>113.350</td><td>0%</td></tr>
+      <tr><td>Julho</td><td>-</td><td>107.683</td><td>0%</td><td>113.350</td><td>0%</td></tr>
+      <tr><td>Agosto</td><td>-</td><td>107.683</td><td>0%</td><td>113.350</td><td>0%</td></tr>
+      <tr><td>Setembro</td><td>-</td><td>107.683</td><td>0%</td><td>113.350</td><td>0%</td></tr>
+      <tr><td>Outubro</td><td>-</td><td>107.683</td><td>0%</td><td>113.350</td><td>0%</td></tr>
+      <tr><td>Novembro</td><td>-</td><td>131.433</td><td>0%</td><td>138.350</td><td>0%</td></tr>
+      <tr><td>Dezembro</td><td>-</td><td>131.433</td><td>0%</td><td>138.350</td><td>0%</td></tr>
+      <tr class="total-row"><td>Total</td><td>306.057</td><td>1.197.190</td><td>26%</td><td>1.260.200</td><td>24%</td></tr>
+    </table></div>
+  </div>
+</div>
+
+<script>
+const days13 = ['1/5','2/5','3/5','4/5','5/5','6/5','7/5','8/5','9/5','10/5','11/5','12/5','13/5'];
+const days14 = ['1/5','2/5','3/5','4/5','5/5','6/5','7/5','8/5','9/5','10/5','11/5','12/5','13/5','14/5'];
+const built = {};
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString('pt-BR') + ' m³' } }
+  },
+  scales: {
+    x: { ticks: { font: { size: 10 }, autoSkip: false, maxRotation: 0 }, grid: { display: false } },
+    y: { ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v }, grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true }
+  }
+};
+
+function mkBar(id, labels, data, color) {
+  if (built[id]) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  built[id] = new Chart(el, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4, borderSkipped: false }] },
+    options: chartDefaults
+  });
+}
+
+function buildCharts(panel) {
+  if (panel === 'teciap') {
+    mkBar('c-teciap-rodo',    days13, [2506,1970,2487,2672,2849,2692,2340,1462,1019,1516,2367,2777,1466], '#378ADD');
+    mkBar('c-teciap-carr',    days13, [1781,1532,3226,1253,1473,1364,2292,1928,2018,1726,1838,2521,1971], '#1D9E75');
+    mkBar('c-teciap-estoque', days13, [1035,1704,1649,1125,2619,3373,3770,4402,4688,3690,3893,4423,4684], '#85B7EB');
+  } else if (panel === 'ultracargo') {
+    mkBar('c-ultra-rodo',    days13, [1684,694,565,1572,2119,995,1489,1229,631,240,1381,1430,2066], '#378ADD');
+    mkBar('c-ultra-ferro',   days13, [1364,1822,937,1039,900,596,810,923,894,1227,1022,1391,0],    '#1D9E75');
+    mkBar('c-ultra-estoque', days13, [968,2653,1985,731,1310,2450,2546,3440,3861,3569,2915,3069,3479], '#85B7EB');
+  } else if (panel === 'raizen') {
+    mkBar('c-raizen-rodo',    days13, [1138,794,1299,1401,1728,1558,1247,477,260,274,1252,1915,1362],  '#378ADD');
+    mkBar('c-raizen-vt',      days13, [1474,928,897,865,1304,596,627,877,831,1108,1180,1236,1278],     '#1D9E75');
+    mkBar('c-raizen-estoque', days14, [722,388,254,658,1005,1015,2573,3195,2795,2225,1391,1463,2143,2228], '#85B7EB');
+  } else if (panel === 'ferrovia') {
+    mkBar('c-ferro-carr', days13, [1781,2896,5048,2190,2512,2265,2712,2738,2940,2620,3064,3542,3362], '#378ADD');
+    mkBar('c-ferro-desc', days13, [2363,2874,2870,2874,3829,4184,3718,3714,4597,2493,2582,1518,2559], '#1D9E75');
+  }
+}
+
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  buildCharts(id);
+}
+
+buildCharts('teciap');
+</script>
+</body>
+</html>
