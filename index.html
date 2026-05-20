@@ -338,6 +338,17 @@ const DEP_CIF=[DEP_T,DEP_U];
 const CLI_T=3490,CLI_U=83868,CLI_C=23184;
 let stockPendente=null,selectedMonth=null;
 
+// ===================== LOCAL STORAGE =====================
+function saveLocal(key,data){
+  try{localStorage.setItem('dash_'+key,JSON.stringify(data));}
+  catch(e){console.warn('localStorage full:',e);}
+}
+function loadLocal(key){
+  try{const d=localStorage.getItem('dash_'+key);return d?JSON.parse(d):null;}
+  catch(e){return null;}
+}
+function clearLocal(key){try{localStorage.removeItem('dash_'+key);}catch(e){}}
+
 // ===================== FIREBASE =====================
 window.addEventListener('firebase-ready',async()=>{
   DB=window._db;FBFNS=window._fbFns;
@@ -345,18 +356,18 @@ window.addEventListener('firebase-ready',async()=>{
 });
 
 async function loadFB(){
+  // Load NF/DESC/TRANS from localStorage (fast)
+  const localNF=loadLocal('nf');if(localNF)STATE.nf=localNF;
+  const localDesc=loadLocal('desc');if(localDesc)STATE.desc=localDesc;
+  const localTrans=loadLocal('trans');if(localTrans)STATE.trans=localTrans;
+
+  // Load CONFIG and ESTOQUE from Firebase (small data)
   if(!DB)return;
   const {doc,getDoc,collection,getDocs}=FBFNS;
   try{
     const cfgDoc=await getDoc(doc(DB,'dashboard','config'));
     if(cfgDoc.exists())STATE.config={...STATE.config,...cfgDoc.data()};
-    const[nfS,descS,transS,estS]=await Promise.all([
-      getDocs(collection(DB,'nf')),getDocs(collection(DB,'descargas')),
-      getDocs(collection(DB,'transito')),getDocs(collection(DB,'estoque'))
-    ]);
-    STATE.nf=nfS.docs.map(d=>d.data());
-    STATE.desc=descS.docs.map(d=>d.data());
-    STATE.trans=transS.docs.map(d=>d.data());
+    const estS=await getDocs(collection(DB,'estoque'));
     STATE.est={};estS.docs.forEach(d=>{STATE.est[d.id]=d.data();});
     applyConfig();updateMonthFilter();
   }catch(e){console.error('FB load:',e);}
@@ -452,12 +463,10 @@ async function handleFile(type,inp){
     prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
     updateBadge();renderAll();
     hideLoading();
-    // Save to Firebase in background
+    // Save to localStorage (fast, no limits)
     if(newRows.length){
-      const colMap={nf:'nf',desc:'descargas',trans:'transito'};
-      saveFB(colMap[type],newRows,r=>r._key).then(()=>{
-        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos no Firebase!';
-      }).catch(e=>console.warn('Firebase save partial:',e));
+      saveLocal(type,STATE[type]);
+      prog.textContent='✅ '+f.name+' — '+newRows.length+' novos registros salvos!';
     }
   }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);hideLoading();}
 }
@@ -630,40 +639,39 @@ async function processEstoque(buf,prod,dtStr){
 async function clearData(type){
   if(!confirm('Limpar dados de '+type+'?'))return;
   showLoading('Limpando...');
-  if(DB){
-    const{collection,getDocs,deleteDoc,doc}=FBFNS;
-    const colMap={'nf':'nf','desc':'descargas','trans':'transito','est-hid':'estoque','est-ani':'estoque'};
-    const colName=colMap[type];
-    try{
-      const snap=await getDocs(collection(DB,colName));
-      // For estoque, only delete entries matching the type
-      const toDelete=type==='est-hid'?snap.docs.filter(d=>d.id.endsWith('_hid')):
-                     type==='est-ani'?snap.docs.filter(d=>d.id.endsWith('_ani')):snap.docs;
-      await Promise.allSettled(toDelete.map(d=>deleteDoc(doc(DB,colName,d.id))));
-    }catch(e){console.error('Clear error:',e);}
+  // Clear localStorage for nf/desc/trans
+  if(type==='nf'){STATE.nf=[];clearLocal('nf');}
+  else if(type==='desc'){STATE.desc=[];clearLocal('desc');}
+  else if(type==='trans'){STATE.trans=[];clearLocal('trans');}
+  // Clear Firebase for estoque
+  if(type==='est-hid'||type==='est-ani'){
+    Object.keys(STATE.est).filter(k=>k.endsWith('_'+( type==='est-hid'?'hid':'ani'))).forEach(k=>delete STATE.est[k]);
+    if(DB){
+      const{collection,getDocs,deleteDoc,doc}=FBFNS;
+      try{
+        const snap=await getDocs(collection(DB,'estoque'));
+        const suffix=type==='est-hid'?'_hid':'_ani';
+        await Promise.allSettled(snap.docs.filter(d=>d.id.endsWith(suffix)).map(d=>deleteDoc(doc(DB,'estoque',d.id))));
+      }catch(e){console.error(e);}
+    }
   }
-  if(type==='nf')STATE.nf=[];
-  else if(type==='desc')STATE.desc=[];
-  else if(type==='trans')STATE.trans=[];
-  else if(type==='est-hid'){Object.keys(STATE.est).filter(k=>k.endsWith('_hid')).forEach(k=>delete STATE.est[k]);}
-  else if(type==='est-ani'){Object.keys(STATE.est).filter(k=>k.endsWith('_ani')).forEach(k=>delete STATE.est[k]);}
-  // clear progress
   const progMap={'nf':'prog-nf','desc':'prog-desc','trans':'prog-trans','est-hid':'prog-hid','est-ani':'prog-ani'};
   const pEl=document.getElementById(progMap[type]);if(pEl){pEl.className='upl-prog';pEl.textContent='';}
   hideLoading();renderAll();
 }
 
 async function clearAll(){
-  if(!confirm('Limpar TODOS os dados do Firebase?'))return;
+  if(!confirm('Limpar TODOS os dados?'))return;
   showLoading('Limpando tudo...');
+  // Clear localStorage
+  ['nf','desc','trans'].forEach(k=>{STATE[k]=[];clearLocal(k);});
+  STATE.est={};
+  // Clear Firebase estoque only
   if(DB){
     const{collection,getDocs,deleteDoc,doc}=FBFNS;
-    for(const col of['nf','descargas','transito','estoque']){
-      try{const s=await getDocs(collection(DB,col));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,col,d.id))));}
-      catch(e){console.error(e);}
-    }
+    try{const s=await getDocs(collection(DB,'estoque'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'estoque',d.id))));}
+    catch(e){console.error(e);}
   }
-  STATE.nf=[];STATE.desc=[];STATE.trans=[];STATE.est={};
   ['prog-nf','prog-desc','prog-trans','prog-hid','prog-ani'].forEach(id=>{
     const el=document.getElementById(id);if(el){el.className='upl-prog';el.textContent='';}
   });
@@ -772,7 +780,8 @@ function getMonthData(){
 
   // Trânsito por cliente (Peso Líquido)
   function transCod(cod){return trans.filter(r=>r.cliente===cod).reduce((s,r)=>s+r.pesoLiq,0);}
-  const transFerro=trans.filter(r=>r.transp===13746).reduce((s,r)=>s+r.pesoLiq,0);
+  const FERRO_CLIS=[11966,7605,3492];
+  const transFerro=trans.filter(r=>r.transp===13746&&FERRO_CLIS.includes(r.cliente)).reduce((s,r)=>s+r.pesoLiq,0);
 
   // NF
   function nfByDay(dep,transpCod=null){
@@ -860,7 +869,7 @@ function getMonthData(){
        giro:uRec/(STATE.config.ultra.hid||1),
        descBD:uBD,carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
        quebra:quebra(CLI_U),usinaReal:usinaReal(CLI_U),usinaPrevisao:usinaPrevisao(CLI_U)},
-    c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cExp-STATE.config.centro.top,
+    c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cRec-STATE.config.centro.top,
        backlog:calcBacklog(nfByDay(DEP_C),STATE.config.centro.top),proj:calcVolProj(nfByDay(DEP_C)),trans:transCod(CLI_C),
        estHid:STATE.config.centro.hid,hidFe:estHid.centro_hid_fe||0,
        giro:cRec/(STATE.config.centro.hid||1),
@@ -868,7 +877,7 @@ function getMonthData(){
        quebra:quebra(CLI_C),usinaReal:usinaReal(CLI_C),usinaPrevisao:usinaPrevisao(CLI_C)},
     ferro:{carrTotal:ferroTotal,descTotal:ferroDescTotal,ct:ferroCt,min:ferroMin,
            saldoCt:ferroTotal-ferroCt,backlog:calcBacklog(ferroCarrBD,ferroCt),
-           proj:mediaFerro*diasMes,transito:transFerro,vagoes:Math.round(transFerro/98),media:mediaFerro,
+           proj:mediaFerro*diasMes,transito:transFerro,vagoes:Math.round(transFerro/95),media:mediaFerro,
            saldoMin:ferroTotal-ferroMin,backlogMin:calcBacklog(ferroCarrBD,ferroMin),
            carrBD:ferroCarrBD,descBD:ferroDescBD,byClient:nfByClient()}
   };
