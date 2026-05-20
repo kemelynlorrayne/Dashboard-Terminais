@@ -356,19 +356,42 @@ window.addEventListener('firebase-ready',async()=>{
 });
 
 async function loadFB(){
-  // Load NF/DESC/TRANS from localStorage (fast)
-  const localNF=loadLocal('nf');if(localNF)STATE.nf=localNF;
-  const localDesc=loadLocal('desc');if(localDesc)STATE.desc=localDesc;
-  const localTrans=loadLocal('trans');if(localTrans)STATE.trans=localTrans;
+  // Load from localStorage cache first (instant render)
+  const localNF=loadLocal('nf');if(localNF&&localNF.length)STATE.nf=localNF;
+  const localDesc=loadLocal('desc');if(localDesc&&localDesc.length)STATE.desc=localDesc;
+  const localTrans=loadLocal('trans');if(localTrans&&localTrans.length)STATE.trans=localTrans;
 
-  // Load CONFIG and ESTOQUE from Firebase (small data)
   if(!DB)return;
   const {doc,getDoc,collection,getDocs}=FBFNS;
   try{
+    setLtxt('Carregando dados...');
     const cfgDoc=await getDoc(doc(DB,'dashboard','config'));
     if(cfgDoc.exists())STATE.config={...STATE.config,...cfgDoc.data()};
+
+    // Always load estoque from Firebase
     const estS=await getDocs(collection(DB,'estoque'));
     STATE.est={};estS.docs.forEach(d=>{STATE.est[d.id]=d.data();});
+
+    // If localStorage empty, load from Firebase
+    if(!STATE.nf.length){
+      setLtxt('Carregando NF do Firebase...');
+      const nfS=await getDocs(collection(DB,'nf'));
+      STATE.nf=nfS.docs.map(d=>d.data());
+      saveLocal('nf',STATE.nf);
+    }
+    if(!STATE.desc.length){
+      setLtxt('Carregando Descargas do Firebase...');
+      const descS=await getDocs(collection(DB,'descargas'));
+      STATE.desc=descS.docs.map(d=>d.data());
+      saveLocal('desc',STATE.desc);
+    }
+    if(!STATE.trans.length){
+      setLtxt('Carregando Trânsito do Firebase...');
+      const transS=await getDocs(collection(DB,'transito'));
+      STATE.trans=transS.docs.map(d=>d.data());
+      saveLocal('trans',STATE.trans);
+    }
+
     applyConfig();updateMonthFilter();
   }catch(e){console.error('FB load:',e);}
 }
@@ -463,10 +486,16 @@ async function handleFile(type,inp){
     prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
     updateBadge();renderAll();
     hideLoading();
-    // Save to localStorage (fast, no limits)
+    // Save to localStorage cache + Firebase
     if(newRows.length){
-      saveLocal(type,STATE[type]);
-      prog.textContent='✅ '+f.name+' — '+newRows.length+' novos registros salvos!';
+      saveLocal(type,STATE[type]); // instant cache
+      prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
+      const colMap={nf:'nf',desc:'descargas',trans:'transito'};
+      saveFB(colMap[type],newRows,r=>r._key).then(()=>{
+        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos!';
+      }).catch(e=>console.warn('Firebase:',e));
+    } else {
+      prog.textContent='✅ '+f.name+' — nenhum registro novo.';
     }
   }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);hideLoading();}
 }
@@ -639,10 +668,19 @@ async function processEstoque(buf,prod,dtStr){
 async function clearData(type){
   if(!confirm('Limpar dados de '+type+'?'))return;
   showLoading('Limpando...');
-  // Clear localStorage for nf/desc/trans
-  if(type==='nf'){STATE.nf=[];clearLocal('nf');}
-  else if(type==='desc'){STATE.desc=[];clearLocal('desc');}
-  else if(type==='trans'){STATE.trans=[];clearLocal('trans');}
+  // Clear localStorage + Firebase for nf/desc/trans
+  if(type==='nf'){
+    STATE.nf=[];clearLocal('nf');
+    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'nf'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'nf',d.id))));}catch(e){}}
+  }
+  else if(type==='desc'){
+    STATE.desc=[];clearLocal('desc');
+    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'descargas'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'descargas',d.id))));}catch(e){}}
+  }
+  else if(type==='trans'){
+    STATE.trans=[];clearLocal('trans');
+    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'transito'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'transito',d.id))));}catch(e){}}
+  }
   // Clear Firebase for estoque
   if(type==='est-hid'||type==='est-ani'){
     Object.keys(STATE.est).filter(k=>k.endsWith('_'+( type==='est-hid'?'hid':'ani'))).forEach(k=>delete STATE.est[k]);
@@ -663,14 +701,17 @@ async function clearData(type){
 async function clearAll(){
   if(!confirm('Limpar TODOS os dados?'))return;
   showLoading('Limpando tudo...');
-  // Clear localStorage
   ['nf','desc','trans'].forEach(k=>{STATE[k]=[];clearLocal(k);});
   STATE.est={};
-  // Clear Firebase estoque only
   if(DB){
     const{collection,getDocs,deleteDoc,doc}=FBFNS;
-    try{const s=await getDocs(collection(DB,'estoque'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'estoque',d.id))));}
-    catch(e){console.error(e);}
+    for(const col of['nf','descargas','transito','estoque']){
+      try{
+        setLtxt('Limpando '+col+'...');
+        const s=await getDocs(collection(DB,col));
+        await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,col,d.id))));
+      }catch(e){console.error(e);}
+    }
   }
   ['prog-nf','prog-desc','prog-trans','prog-hid','prog-ani'].forEach(id=>{
     const el=document.getElementById(id);if(el){el.className='upl-prog';el.textContent='';}
