@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Operações Logística</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDr32SAp-IOrdUdfRparJJw2-7lX0Re3hU",
+    authDomain: "dashboard---ferrovia.firebaseapp.com",
+    projectId: "dashboard---ferrovia",
+    storageBucket: "dashboard---ferrovia.firebasestorage.app",
+    messagingSenderId: "518898030515",
+    appId: "1:518898030515:web:f83fae4e3894ab0d361dc6"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window._db = db;
+  window._fbFns = { doc, setDoc, getDoc, collection, getDocs, deleteDoc, writeBatch };
+  window._fbReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--sur:#1a1d27;--sur2:#22263a;--bdr:#2a2f45;--txt:#e8eaf0;--txt2:#8b93b0;--txt3:#4a5175;--blue:#4f8ef7;--blue-d:#1a4fa8;--blue-l:rgba(79,142,247,.12);--green:#22c55e;--green-l:rgba(34,197,94,.12);--red:#ef4444;--red-l:rgba(239,68,68,.12);--yellow:#f59e0b;--r:8px;--r2:12px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px}
+.nav{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 20px;display:flex;align-items:center;height:52px;position:sticky;top:0;z-index:100}
+.nav-logo{font-size:13px;font-weight:600;margin-right:28px;white-space:nowrap}
+.nav-tabs{display:flex;height:100%;gap:2px}
+.nav-tab{padding:0 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--txt2);height:100%;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
+.nav-tab.active,.nav-tab:hover{color:var(--blue);border-bottom-color:var(--blue)}
+.nav-right{margin-left:auto;font-size:11px;color:var(--txt3)}
+.month-bar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:8px 20px;display:flex;align-items:center;gap:10px}
+.month-label{font-size:11px;color:var(--txt2);font-weight:500}
+.month-select{background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:4px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;cursor:pointer}
+.term-tabs{padding:16px 20px 0;display:flex;gap:4px}
+.term-tab{padding:8px 18px;font-size:12px;font-weight:500;border:none;background:var(--sur2);color:var(--txt2);border-radius:var(--r) var(--r) 0 0;cursor:pointer;font-family:inherit;border:1px solid var(--bdr);border-bottom:none;transition:all .15s}
+.term-tab.active{background:var(--sur);color:var(--blue);border-bottom:1px solid var(--sur)}
+.page{display:none;padding:0 20px 40px}.page.active{display:block}
+.term-content{background:var(--sur);border:1px solid var(--bdr);border-radius:0 var(--r2) var(--r2) var(--r2);padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px 16px}
+.kpi .klbl{font-size:10px;color:var(--txt2);margin-bottom:6px;line-height:1.4;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.kpi .kval{font-size:20px;font-weight:600;color:var(--txt);font-variant-numeric:tabular-nums}
+.kpi .kval.neg{color:var(--red)}.kpi .kval.pos{color:var(--green)}
+.kpi .ksub-lbl{font-size:9px;color:var(--txt3);margin-top:6px;text-transform:uppercase;letter-spacing:.3px}
+.kpi .ksub-val{font-size:12px;font-weight:500;color:var(--txt2);font-variant-numeric:tabular-nums}
+.sec{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.6px;margin:20px 0 8px}
+.chart-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;margin-bottom:14px}
+.chart-wrap{position:relative;height:180px}
+.t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.tcard{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
+.tcard-head{background:var(--sur);padding:8px 12px;font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr)}
+.tcard-head.danger{color:var(--red)}
+.tcard table{width:100%;font-size:11px;border-collapse:collapse}
+.tcard td{padding:5px 12px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.tcard td:first-child{color:var(--txt2)}.tcard td:not(:first-child){text-align:right;color:var(--txt)}
+.tcard .tr-tot td{font-weight:600;background:rgba(255,255,255,.03)}
+.ftbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.ftbl table{width:100%;font-size:11px;border-collapse:collapse}
+.ftbl th{background:var(--sur);font-size:10px;font-weight:600;padding:8px 12px;color:var(--txt2);text-align:left;border-bottom:1px solid var(--bdr);text-transform:uppercase;letter-spacing:.3px}
+.ftbl th:not(:first-child),.ftbl td:not(:first-child){text-align:right}
+.ftbl td{padding:6px 12px;border-top:1px solid var(--bdr);color:var(--txt);font-variant-numeric:tabular-nums}
+.ftbl td:first-child{color:var(--txt2)}.ftbl .tr-tot td{font-weight:600;background:rgba(255,255,255,.03)}
+.sc{max-height:300px;overflow-y:auto}
+.ttbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.ttbl table{width:100%;font-size:12px;border-collapse:collapse}
+.ttbl th{background:var(--blue-d);color:#fff;font-size:10px;font-weight:600;padding:10px 14px;text-align:left;letter-spacing:.4px;text-transform:uppercase}
+.ttbl th:not(:first-child){text-align:right}
+.ttbl td{padding:9px 14px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.ttbl td:first-child{color:var(--txt2);font-weight:500}.ttbl td:not(:first-child){text-align:right;color:var(--txt)}
+.ttbl .tr-tot td{font-weight:700;background:rgba(79,142,247,.08);color:var(--txt)}
+.ttbl .fat{color:var(--red);font-weight:600}
+.ttbl input[type=number]{background:transparent;border:none;border-bottom:1px dashed var(--bdr);color:var(--txt);font-size:12px;font-family:inherit;width:80px;text-align:right;outline:none;font-variant-numeric:tabular-nums}
+.ttbl input[type=number]:focus{border-bottom-color:var(--blue)}
+.iok{color:var(--green);font-weight:600}.iwarn{color:var(--yellow);font-weight:600}.ibad{color:var(--red);font-weight:600}
+.trim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:20px}
+.cfg-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+.cfg-title{font-size:13px;font-weight:600;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--bdr)}
+.cfg-field{margin-bottom:12px}
+.cfg-field label{display:block;font-size:10px;font-weight:500;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.cfg-field input{width:100%;background:var(--sur);border:1px solid var(--bdr);color:var(--txt);padding:8px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
+.cfg-field input:focus{border-color:var(--blue)}
+.cfg-save{width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
+.cfg-save:hover{background:var(--blue-d)}
+.upl-page{padding:20px}
+.upl-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--yellow);margin-bottom:20px}
+.upl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.upl-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+.upl-card-title{font-size:13px;font-weight:600;margin-bottom:6px}
+.upl-card-desc{font-size:11px;color:var(--txt2);margin-bottom:14px;line-height:1.5}
+.upl-card-desc.warn{color:var(--yellow)}
+.upl-drop{border:2px dashed var(--bdr);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.upl-drop:hover{border-color:var(--blue);background:var(--blue-l)}
+.upl-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upl-drop-icon{font-size:24px;margin-bottom:8px}
+.upl-drop-text{font-size:11px;color:var(--txt2)}
+.upl-drop-name{font-size:10px;color:var(--txt3);margin-top:4px}
+.upl-clear{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--red-l);color:var(--red);border:1px solid rgba(239,68,68,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;width:fit-content}
+.upl-prog{margin-top:8px;font-size:11px;min-height:18px}
+.upl-prog.ok{color:var(--green)}.upl-prog.err{color:var(--red)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;width:360px}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:16px}
+.modal-field{margin-bottom:12px}
+.modal-field label{display:block;font-size:11px;color:var(--txt2);margin-bottom:4px}
+.modal-field select,.modal-field input[type=date]{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:8px 10px;border-radius:var(--r);font-size:12px;font-family:inherit}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+.modal-btn{flex:1;padding:9px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal-btn.cancel{background:var(--sur2);color:var(--txt2)}.modal-btn.confirm{background:var(--blue);color:#fff}
+.ld{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.ld.show{display:flex}
+.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ltxt{color:var(--txt);font-size:13px;font-weight:500}
+.ferro-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ferro-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr);background:var(--sur2);color:var(--txt2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.ferro-btn.active{background:var(--blue-l);color:var(--blue);border-color:var(--blue)}
+.clear-all-btn{padding:7px 14px;background:var(--red-l);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);font-size:12px;cursor:pointer;font-family:inherit}
+@media(max-width:700px){.t3{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}.trim-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="ld" id="ld"><div class="spin"></div><div class="ltxt" id="ltxt">Processando...</div></div>
+
+<!-- STOCK MODAL -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal">
+    <div class="modal-title">📦 Informações do Estoque</div>
+    <p style="font-size:11px;color:var(--txt2);margin-bottom:14px">Informe o produto e a data antes de selecionar.</p>
+    <div class="modal-field"><label>Produto</label>
+      <select id="stockProduto">
+        <option value="">— Selecione —</option>
+        <option value="hid">Álcool Etílico Hidratado (AEHC)</option>
+        <option value="ani">Álcool Etílico Anidro (AEAC)</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Data do Relatório</label><input type="date" id="stockData"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeStockModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmStockModal()">Confirmar e Selecionar</button>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-logo">OPERAÇÕES LOGÍSTICA</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('terminais',this)">Terminais</button>
+    <button class="nav-tab" onclick="showPage('ferrovia',this)">Ferrovia</button>
+    <button class="nav-tab" onclick="showPage('top',this)">Take or Pay</button>
+    <button class="nav-tab" onclick="showPage('config',this)">Configurações</button>
+    <button class="nav-tab" onclick="showPage('upload',this)">↑ Upload Dados</button>
+  </div>
+  <div class="nav-right" id="ubadge">—</div>
+</nav>
+
+<div class="month-bar">
+  <span class="month-label">Filtro Mês:</span>
+  <select class="month-select" id="monthFilter" onchange="onMonthChange()">
+    <option value="">Mês atual</option>
+  </select>
+</div>
+
+<!-- TERMINAIS -->
+<div id="page-terminais" class="page active">
+  <div class="term-tabs">
+    <button class="term-tab active" onclick="showTerm('teciap',this)">Teciap</button>
+    <button class="term-tab" onclick="showTerm('ultra',this)">Ultracargo RO</button>
+    <button class="term-tab" onclick="showTerm('centro',this)">Centroeste</button>
+  </div>
+  <div id="term-teciap" class="term-content">
+    <div class="kpi-grid" id="kpi-teciap"></div>
+    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-td"></canvas></div></div>
+    <div class="sec">Carregamentos — Rodo / Ferro / Transf</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-tc"></canvas></div></div>
+    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-te"></canvas></div></div>
+    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-teciap"></div>
+    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-teciap"></div>
+  </div>
+  <div id="term-ultra" class="term-content" style="display:none">
+    <div class="kpi-grid" id="kpi-ultra"></div>
+    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ud"></canvas></div></div>
+    <div class="sec">Carregamentos — Ferro</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-uc"></canvas></div></div>
+    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ue"></canvas></div></div>
+    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-ultra"></div>
+    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-ultra"></div>
+  </div>
+  <div id="term-centro" class="term-content" style="display:none">
+    <div class="kpi-grid" id="kpi-centro"></div>
+    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cd"></canvas></div></div>
+    <div class="sec">Carregamento VT</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cc"></canvas></div></div>
+    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ce"></canvas></div></div>
+    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-centro"></div>
+    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-centro"></div>
+  </div>
+</div>
+
+<!-- FERROVIA -->
+<div id="page-ferrovia" class="page" style="padding:20px">
+  <div class="kpi-grid" id="kpi-ferro"></div>
+  <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fc"></canvas></div></div>
+  <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fd"></canvas></div></div>
+  <div class="ferro-filter" id="ferro-filter"></div>
+  <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
+</div>
+
+<!-- TAKE OR PAY -->
+<div id="page-top" class="page" style="padding:20px">
+  <div class="sec">Anual</div><div class="ttbl" id="top-anual"></div>
+  <div class="trim-grid">
+    <div><div class="sec">1º Trimestre</div><div class="ttbl" id="top-t1"></div></div>
+    <div><div class="sec">2º Trimestre</div><div class="ttbl" id="top-t2"></div></div>
+    <div><div class="sec">3º Trimestre</div><div class="ttbl" id="top-t3"></div></div>
+    <div><div class="sec">4º Trimestre</div><div class="ttbl" id="top-t4"></div></div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="page-config" class="page">
+  <div class="cfg-grid">
+    <div class="cfg-card"><div class="cfg-title">Teciap</div>
+      <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-t-top" value="35000"></div>
+      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-t-hid" value="6000"></div>
+      <div class="cfg-field"><label>Estática Contratada — Anidro (m³)</label><input type="number" id="cfg-t-ani" value="1000"></div>
+      <button class="cfg-save" onclick="saveConfig('teciap')">Salvar Teciap</button>
+    </div>
+    <div class="cfg-card"><div class="cfg-title">Ultracargo RO</div>
+      <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-u-top" value="25000"></div>
+      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-u-hid" value="5000"></div>
+      <button class="cfg-save" onclick="saveConfig('ultra')">Salvar Ultracargo</button>
+    </div>
+    <div class="cfg-card"><div class="cfg-title">Centroeste</div>
+      <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-c-top" value="29417"></div>
+      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-c-hid" value="1250"></div>
+      <button class="cfg-save" onclick="saveConfig('centro')">Salvar Centroeste</button>
+    </div>
+    <div class="cfg-card"><div class="cfg-title">Ferrovia (Rumo)</div>
+      <div class="cfg-field"><label>Contrato Transporte / Mês (m³)</label><input type="number" id="cfg-f-ct" value="88350"></div>
+      <div class="cfg-field"><label>Mínimo Contratual / Mês (m³)</label><input type="number" id="cfg-f-min" value="83933"></div>
+      <button class="cfg-save" onclick="saveConfig('ferro')">Salvar Ferrovia</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div id="page-upload" class="page">
+  <div class="upl-page">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600">Upload de Dados</div>
+      <button class="clear-all-btn" onclick="clearAll()">🗑️ Limpar Todos os Dados</button>
+    </div>
+    <div class="upl-warn">⚠️ Apenas registros novos são adicionados — duplicatas são ignoradas automaticamente.</div>
+    <div class="upl-grid">
+      <div class="upl-card">
+        <div class="upl-card-title">① 🧾 Notas Fiscais</div>
+        <div class="upl-card-desc warn">⚠️ <strong>Importe primeiro.</strong></div>
+        <button class="upl-clear" onclick="clearData('nf')">🗑️ Limpar</button>
+        <div class="upl-drop">
+          <input type="file" accept=".xlsx,.xls" onchange="handleFile('nf',this)">
+          <div class="upl-drop-icon">📋</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">Notas_Fiscais.xlsx</div>
+        </div>
+        <div class="upl-prog" id="prog-nf"></div>
+      </div>
+      <div class="upl-card">
+        <div class="upl-card-title">② 📦 Descargas</div>
+        <div class="upl-card-desc warn">⚠️ <strong>Importe após as Notas.</strong></div>
+        <button class="upl-clear" onclick="clearData('desc')">🗑️ Limpar</button>
+        <div class="upl-drop">
+          <input type="file" accept=".xlsx,.xls" onchange="handleFile('desc',this)">
+          <div class="upl-drop-icon">📊</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">Movimentação_-_Descargas.xlsx</div>
+        </div>
+        <div class="upl-prog" id="prog-desc"></div>
+      </div>
+      <div class="upl-card">
+        <div class="upl-card-title">③ 🚛 Trânsito</div>
+        <div class="upl-card-desc">Sinop +2 dias, Nova Mutum +1 dia.</div>
+        <button class="upl-clear" onclick="clearData('trans')">🗑️ Limpar</button>
+        <div class="upl-drop">
+          <input type="file" accept=".xlsx,.xls" onchange="handleFile('trans',this)">
+          <div class="upl-drop-icon">🗂️</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">Movimentação_-_Transito.xlsx</div>
+        </div>
+        <div class="upl-prog" id="prog-trans"></div>
+      </div>
+      <div class="upl-card">
+        <div class="upl-card-title">④ 🏭 Estoque Hidratado</div>
+        <div class="upl-card-desc">Informe a data antes de selecionar.</div>
+        <button class="upl-clear" onclick="clearData('est-hid')">🗑️ Limpar Hidratado</button>
+        <div class="upl-drop" id="drop-hid" onclick="openStockModal('hid',event)">
+          <div class="upl-drop-icon">💧</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">HIDRATADO_DD_MM.CSV</div>
+        </div>
+        <input type="file" accept=".xls,.xlsx,.csv" id="stock-hid-input" style="display:none" onchange="handleStockFile(this,'hid')">
+        <div class="upl-prog" id="prog-hid"></div>
+      </div>
+      <div class="upl-card">
+        <div class="upl-card-title">④ 🏭 Estoque Anidro</div>
+        <div class="upl-card-desc">Informe a data antes de selecionar.</div>
+        <button class="upl-clear" onclick="clearData('est-ani')">🗑️ Limpar Anidro</button>
+        <div class="upl-drop" id="drop-ani" onclick="openStockModal('ani',event)">
+          <div class="upl-drop-icon">🌾</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">ANIDRO_DD_MM.CSV</div>
+        </div>
+        <input type="file" accept=".xls,.xlsx,.csv" id="stock-ani-input" style="display:none" onchange="handleStockFile(this,'ani')">
+        <div class="upl-prog" id="prog-ani"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== STATE =====================
+let DB=null,FBFNS=null;
+let STATE={nf:[],desc:[],trans:[],est:{},config:{
+  teciap:{top:35000,hid:6000,ani:1000},ultra:{top:25000,hid:5000,ani:0},centro:{top:29417,hid:1250,ani:0},ferro:{ct:88350,min:83933},
+  top_fat:[51418,54736,75133,87098,0,0,0,0,0,0,0,0],
+  top_min:[60183,83933,83933,83933,83933,107683,107683,107683,107683,107683,131433,131433],
+  top_cont:[63350,88350,88350,88350,88350,113350,113350,113350,113350,113350,138350,138350]
+}};
+const CH={};
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const RUMO=3616;
+const DEP_T='TECIAP',DEP_U='ULTRACARGO RONDON',DEP_C='CENTROESTE';
+const DEP_CIF=[DEP_T,DEP_U];
+const CLI_T=3490,CLI_U=83868,CLI_C=23184;
+let stockPendente=null,selectedMonth=null;
+
+// ===================== FIREBASE =====================
+window.addEventListener('firebase-ready',async()=>{
+  DB=window._db;FBFNS=window._fbFns;
+  await loadFB();renderAll();
+});
+
+async function loadFB(){
+  if(!DB)return;
+  const {doc,getDoc,collection,getDocs}=FBFNS;
+  try{
+    const cfgDoc=await getDoc(doc(DB,'dashboard','config'));
+    if(cfgDoc.exists())STATE.config={...STATE.config,...cfgDoc.data()};
+    const[nfS,descS,transS,estS]=await Promise.all([
+      getDocs(collection(DB,'nf')),getDocs(collection(DB,'descargas')),
+      getDocs(collection(DB,'transito')),getDocs(collection(DB,'estoque'))
+    ]);
+    STATE.nf=nfS.docs.map(d=>d.data());
+    STATE.desc=descS.docs.map(d=>d.data());
+    STATE.trans=transS.docs.map(d=>d.data());
+    STATE.est={};estS.docs.forEach(d=>{STATE.est[d.id]=d.data();});
+    applyConfig();updateMonthFilter();
+  }catch(e){console.error('FB load:',e);}
+}
+
+async function saveFB(col,docs,keyFn){
+  if(!DB||!docs.length)return;
+  const{doc,setDoc}=FBFNS;
+  const BS=20; // smaller batches to avoid Firebase rate limits
+  for(let i=0;i<docs.length;i+=BS){
+    const batch=docs.slice(i,i+BS);
+    // Sequential writes within batch to avoid rate limiting
+    for(const d of batch){
+      try{await setDoc(doc(DB,col,keyFn(d)),d,{merge:true});}
+      catch(e){console.warn(`${col} write failed:`,e.code||e.message);}
+    }
+    setLtxt(`Salvando ${col}... ${Math.min(i+BS,docs.length)}/${docs.length}`);
+    await sl(200); // wait 200ms between batches
+  }
+}
+
+async function saveEstFB(key,data){
+  if(!DB)return;
+  const{doc,setDoc}=FBFNS;
+  await setDoc(doc(DB,'estoque',key),data,{merge:true});
+}
+
+// ===================== PARSE =====================
+function parseXL(buf,hdr=1){
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:false,range:hdr});
+}
+
+function parseStockBuf(buf){
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  // find header row containing 'saldo'
+  let h=0;
+  for(let i=0;i<Math.min(arr.length,10);i++){
+    if(arr[i]&&arr[i].some(v=>v&&String(v).toLowerCase().includes('saldo'))){h=i;break;}
+  }
+  const hdrs=arr[h];
+  // find column indices
+  const iDep=hdrs.findIndex((c,i)=>i===1)||1; // always column 1
+  const iGef=hdrs.findIndex(c=>c&&String(c).toLowerCase().includes('grupo'));
+  const iAnt=hdrs.findIndex(c=>c&&String(c).toLowerCase().includes('ant'));
+  const iAtual=hdrs.findIndex(c=>c&&String(c).toLowerCase().includes('atual'));
+  const gefIdx=iGef>=0?iGef:3;
+  const antIdx=iAnt>=0?iAnt:6;
+  const atualIdx=iAtual>=0?iAtual:9;
+  const rows=arr.slice(h+1).filter(r=>r&&r[1]!=null&&r[1]!=='');
+  return{rows,gefIdx,antIdx,atualIdx};
+}
+
+// ===================== UTILS =====================
+function pn(v){
+  if(v===null||v===undefined)return 0;
+  if(typeof v==='number')return v;
+  const s=String(v).trim();if(!s||s==='-')return 0;
+  if(s.includes(',')&&s.includes('.'))return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;
+  if(s.includes(','))return parseFloat(s.replace(',','.'))||0;
+  return parseFloat(s)||0;
+}
+function fmt(v,d=0){if(v===null||v===undefined||isNaN(v)||!isFinite(v))return'-';return v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function toDate(v){if(!v)return null;if(v instanceof Date)return isNaN(v)?null:v;const d=new Date(v);return isNaN(d)?null:d;}
+function addDays(dt,n){const d=new Date(dt);d.setDate(d.getDate()+n);return d;}
+function diffDays(a,b){
+  const da=new Date(a.getFullYear(),a.getMonth(),a.getDate());
+  const db=new Date(b.getFullYear(),b.getMonth(),b.getDate());
+  return Math.round((da-db)/86400000);
+}
+function daysInMonth(y,m){return new Date(y,m,0).getDate();}
+function sl(ms){return new Promise(r=>setTimeout(r,ms));}
+function setLtxt(t){const el=document.getElementById('ltxt');if(el)el.textContent=t;}
+function showLoading(t){document.getElementById('ld').classList.add('show');setLtxt(t||'Processando...');}
+function hideLoading(){document.getElementById('ld').classList.remove('show');}
+
+// ===================== FILE HANDLERS =====================
+async function handleFile(type,inp){
+  const f=inp.files[0];if(!f)return;
+  showLoading('Lendo '+f.name+'...');await sl(50);
+  const buf=await f.arrayBuffer();
+  const prog=document.getElementById('prog-'+type);
+  try{
+    let newRows=[];
+    if(type==='nf')newRows=await processNFLocal(buf);
+    else if(type==='desc')newRows=await processDescLocal(buf);
+    else if(type==='trans')newRows=await processTransLocal(buf);
+    // Render immediately from local STATE
+    prog.className='upl-prog ok';
+    prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
+    updateBadge();renderAll();
+    hideLoading();
+    // Save to Firebase in background
+    if(newRows.length){
+      const colMap={nf:'nf',desc:'descargas',trans:'transito'};
+      saveFB(colMap[type],newRows,r=>r._key).then(()=>{
+        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos no Firebase!';
+      }).catch(e=>console.warn('Firebase save partial:',e));
+    }
+  }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);hideLoading();}
+}
+
+async function processNFLocal(buf){
+  setLtxt('Lendo Notas Fiscais...');
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const allRows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:false,range:1});
+  const DEPS=[DEP_T,DEP_U,DEP_C];
+  const existingKeys=new Set(STATE.nf.map(r=>r._key));
+  const newRows=[];
+  const CHUNK=500;
+  for(let i=0;i<allRows.length;i+=CHUNK){
+    const chunk=allRows.slice(i,i+CHUNK);
+    for(const r of chunk){
+      const dep=String(r['Depósito Saída']||'').trim();
+      if(!DEPS.includes(dep))continue;
+      const dt=toDate(r['Data Hora Saida']);if(!dt)continue;
+      // Key: NF + dep + data (unique per note per terminal per day)
+      const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+dep+'|'+dt.toISOString().substring(0,10);
+      if(existingKeys.has(key))continue;
+      newRows.push({
+        _key:key,nrnf:String(r['Nr. NF']||''),
+        dt:dt.toISOString().substring(0,10),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
+        dep,gef:String(r['GEF']||'').trim(),
+        codCliente:pn(r['Cód. Cliente']),nomeCliente:String(r['Nome Cliente']||'').trim(),
+        codTransp:pn(r['Código Transportadora']),rotina:pn(r['Cód. Rotina']),
+        qtde:pn(r['Qtde'])/1000,descItem:String(r['Descrição Item']||'').trim(),
+      });
+      existingKeys.add(key);
+    }
+    setLtxt(`Processando NF... ${Math.min(i+CHUNK,allRows.length)}/${allRows.length} (${newRows.length} novos)`);
+    await sl(10);
+  }
+  STATE.nf=[...STATE.nf,...newRows];
+  return newRows;
+}
+
+async function processDescLocal(buf){
+  setLtxt('Lendo Descargas...');
+  const allRows=parseXL(buf,1);
+  const CODS=[CLI_T,CLI_U,CLI_C];
+  const existingKeys=new Set(STATE.desc.map(r=>r._key));
+  const newRows=[];
+  for(const r of allRows){
+    // Skip blank rows (mesclagem): G column must have value
+    if(!r['G']&&r['G']!==0)continue;
+    const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
+    const dt=toDate(r['Data Saída']);if(!dt)continue;
+    // Key: Nº Nota + Cliente + data
+    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dt.toISOString().substring(0,10);
+    if(existingKeys.has(key))continue;
+    newRows.push({
+      _key:key,nrnota:String(r['Nº Nota']||''),
+      dt:dt.toISOString().substring(0,10),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
+      cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
+      pesoDestino:pn(r['Peso Destino'])/1000,pesoLiq:pn(r['Peso Líquido'])/1000,
+      quebra:pn(r['Quebra'])/1000,transp:pn(r['Transportador']),
+    });
+    existingKeys.add(key);
+  }
+  STATE.desc=[...STATE.desc,...newRows];
+  return newRows;
+}
+
+async function processTransLocal(buf){
+  setLtxt('Lendo Trânsito...');
+  const allRows=parseXL(buf,1);
+  const CODS=[CLI_T,CLI_U,CLI_C];
+  const existingKeys=new Set(STATE.trans.map(r=>r._key));
+  const newRows=[];
+  for(const r of allRows){
+    // Only in-transit = no Data Saída
+    if(toDate(r['Data Saída']))continue;
+    const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
+    const emDt=toDate(r['Dt. Emissão']);if(!emDt)continue;
+    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+emDt.toISOString().substring(0,10);
+    if(existingKeys.has(key))continue;
+    newRows.push({
+      _key:key,nrnota:String(r['Nº Nota']||''),
+      emissao:emDt.toISOString().substring(0,10),
+      cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
+      pesoLiq:pn(r['Peso Líquido'])/1000,transp:pn(r['Transportador']),
+    });
+    existingKeys.add(key);
+  }
+  STATE.trans=[...STATE.trans,...newRows];
+  return newRows;
+}
+
+// ===================== STOCK =====================
+function openStockModal(prod,e){
+  e.preventDefault();e.stopPropagation();
+  stockPendente={prod,dt:null};
+  // Pre-select product
+  document.getElementById('stockProduto').value=prod;
+  document.getElementById('stockData').value='';
+  document.getElementById('stockModal').classList.add('show');
+}
+function closeStockModal(){document.getElementById('stockModal').classList.remove('show');stockPendente=null;}
+function confirmStockModal(){
+  const prod=document.getElementById('stockProduto').value;
+  const dt=document.getElementById('stockData').value;
+  if(!prod||!dt){alert('Selecione o produto e a data');return;}
+  stockPendente={prod,dt};
+  document.getElementById('stockModal').classList.remove('show');
+  document.getElementById('stock-'+prod+'-input').click();
+}
+
+async function handleStockFile(inp,prod){
+  if(!stockPendente||!inp.files[0])return;
+  const{prod:p,dt}=stockPendente;
+  showLoading('Processando estoque...');await sl(50);
+  const buf=await inp.files[0].arrayBuffer();
+  const prog=document.getElementById('prog-'+p);
+  try{
+    await processEstoque(buf,p,dt);
+    prog.className='upl-prog ok';
+    prog.textContent='✅ Estoque '+p.toUpperCase()+' '+dt+' importado!';
+    updateBadge();renderAll();
+  }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);}
+  stockPendente=null;hideLoading();
+}
+
+async function processEstoque(buf,prod,dtStr){
+  const{rows,gefIdx,antIdx,atualIdx}=parseStockBuf(buf);
+  const GEF_ULTRA=['1 / 1 / 1','1 / 1 / 3'];
+  
+  function getDepVal(r){
+    const v=r[1]; // always column index 1
+    if(v==null)return 0;
+    if(typeof v==='number')return v;
+    return parseFloat(String(v).replace(',','.').replace(/[^0-9.]/g,''))||0;
+  }
+  function getVal(r,idx){
+    const v=r[idx];if(v==null||v==='')return 0;
+    if(typeof v==='number')return v/1000;
+    return pn(v)/1000;
+  }
+  function sumRows(depList,gefFilter=null){
+    return rows.filter(r=>{
+      const dep=getDepVal(r);
+      if(!depList.some(d=>Math.abs(dep-d)<0.001))return false;
+      if(gefFilter){const g=String(r[gefIdx]||'').trim();return gefFilter.includes(g);}
+      return true;
+    });
+  }
+
+  const data={prod,dt:dtStr};
+  if(prod==='hid'){
+    const tR=sumRows([17]),uR=sumRows([0.34,0.35],GEF_ULTRA),cR=sumRows([0.07,0.21]);
+    data.teciap_hid_ab=tR.reduce((s,r)=>s+getVal(r,antIdx),0);
+    data.teciap_hid_fe=tR.reduce((s,r)=>s+getVal(r,atualIdx),0);
+    data.ultra_hid_ab=uR.reduce((s,r)=>s+getVal(r,antIdx),0);
+    data.ultra_hid_fe=uR.reduce((s,r)=>s+getVal(r,atualIdx),0);
+    data.centro_hid_ab=cR.reduce((s,r)=>s+getVal(r,antIdx),0);
+    data.centro_hid_fe=cR.reduce((s,r)=>s+getVal(r,atualIdx),0);
+  }else{
+    const tR=sumRows([17]);
+    data.teciap_ani_ab=tR.reduce((s,r)=>s+getVal(r,antIdx),0);
+    data.teciap_ani_fe=tR.reduce((s,r)=>s+getVal(r,atualIdx),0);
+  }
+  const key=dtStr+'_'+prod;
+  STATE.est[key]=data;
+  await saveEstFB(key,data);
+}
+
+// ===================== CLEAR =====================
+async function clearData(type){
+  if(!confirm('Limpar dados de '+type+'?'))return;
+  showLoading('Limpando...');
+  if(DB){
+    const{collection,getDocs,deleteDoc,doc}=FBFNS;
+    const colMap={'nf':'nf','desc':'descargas','trans':'transito','est-hid':'estoque','est-ani':'estoque'};
+    const colName=colMap[type];
+    try{
+      const snap=await getDocs(collection(DB,colName));
+      // For estoque, only delete entries matching the type
+      const toDelete=type==='est-hid'?snap.docs.filter(d=>d.id.endsWith('_hid')):
+                     type==='est-ani'?snap.docs.filter(d=>d.id.endsWith('_ani')):snap.docs;
+      await Promise.allSettled(toDelete.map(d=>deleteDoc(doc(DB,colName,d.id))));
+    }catch(e){console.error('Clear error:',e);}
+  }
+  if(type==='nf')STATE.nf=[];
+  else if(type==='desc')STATE.desc=[];
+  else if(type==='trans')STATE.trans=[];
+  else if(type==='est-hid'){Object.keys(STATE.est).filter(k=>k.endsWith('_hid')).forEach(k=>delete STATE.est[k]);}
+  else if(type==='est-ani'){Object.keys(STATE.est).filter(k=>k.endsWith('_ani')).forEach(k=>delete STATE.est[k]);}
+  // clear progress
+  const progMap={'nf':'prog-nf','desc':'prog-desc','trans':'prog-trans','est-hid':'prog-hid','est-ani':'prog-ani'};
+  const pEl=document.getElementById(progMap[type]);if(pEl){pEl.className='upl-prog';pEl.textContent='';}
+  hideLoading();renderAll();
+}
+
+async function clearAll(){
+  if(!confirm('Limpar TODOS os dados do Firebase?'))return;
+  showLoading('Limpando tudo...');
+  if(DB){
+    const{collection,getDocs,deleteDoc,doc}=FBFNS;
+    for(const col of['nf','descargas','transito','estoque']){
+      try{const s=await getDocs(collection(DB,col));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,col,d.id))));}
+      catch(e){console.error(e);}
+    }
+  }
+  STATE.nf=[];STATE.desc=[];STATE.trans=[];STATE.est={};
+  ['prog-nf','prog-desc','prog-trans','prog-hid','prog-ani'].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.className='upl-prog';el.textContent='';}
+  });
+  hideLoading();renderAll();
+}
+
+// ===================== CONFIG =====================
+function applyConfig(){
+  document.getElementById('cfg-t-top').value=STATE.config.teciap.top;
+  document.getElementById('cfg-t-hid').value=STATE.config.teciap.hid;
+  document.getElementById('cfg-t-ani').value=STATE.config.teciap.ani;
+  document.getElementById('cfg-u-top').value=STATE.config.ultra.top;
+  document.getElementById('cfg-u-hid').value=STATE.config.ultra.hid;
+  document.getElementById('cfg-c-top').value=STATE.config.centro.top;
+  document.getElementById('cfg-c-hid').value=STATE.config.centro.hid;
+  document.getElementById('cfg-f-ct').value=STATE.config.ferro.ct;
+  document.getElementById('cfg-f-min').value=STATE.config.ferro.min;
+}
+async function saveConfig(w){
+  if(w==='teciap'){STATE.config.teciap.top=+document.getElementById('cfg-t-top').value;STATE.config.teciap.hid=+document.getElementById('cfg-t-hid').value;STATE.config.teciap.ani=+document.getElementById('cfg-t-ani').value;}
+  else if(w==='ultra'){STATE.config.ultra.top=+document.getElementById('cfg-u-top').value;STATE.config.ultra.hid=+document.getElementById('cfg-u-hid').value;}
+  else if(w==='centro'){STATE.config.centro.top=+document.getElementById('cfg-c-top').value;STATE.config.centro.hid=+document.getElementById('cfg-c-hid').value;}
+  else if(w==='ferro'){STATE.config.ferro.ct=+document.getElementById('cfg-f-ct').value;STATE.config.ferro.min=+document.getElementById('cfg-f-min').value;}
+  if(DB){const{doc,setDoc}=FBFNS;await setDoc(doc(DB,'dashboard','config'),STATE.config);}
+  alert('✅ Salvo!');renderAll();
+}
+
+// ===================== MONTH FILTER =====================
+function updateMonthFilter(){
+  const months=new Set();
+  STATE.desc.forEach(r=>months.add(r.ano+'-'+String(r.mes).padStart(2,'0')));
+  STATE.nf.forEach(r=>months.add(r.ano+'-'+String(r.mes).padStart(2,'0')));
+  const sel=document.getElementById('monthFilter'),cur=sel.value;
+  sel.innerHTML='<option value="">Mês atual</option>';
+  [...months].sort().reverse().forEach(m=>{
+    const[y,mo]=m.split('-');
+    const opt=document.createElement('option');
+    opt.value=m;opt.textContent=MESES[parseInt(mo)-1]+' '+y;
+    sel.appendChild(opt);
+  });
+  sel.value=cur;
+}
+function onMonthChange(){
+  const val=document.getElementById('monthFilter').value;
+  if(!val)selectedMonth=null;
+  else{const[y,m]=val.split('-');selectedMonth={year:parseInt(y),month:parseInt(m)};}
+  renderAll();
+}
+function getCurrentMonth(){
+  if(selectedMonth)return selectedMonth;
+  const now=new Date();return{year:now.getFullYear(),month:now.getMonth()+1};
+}
+
+// ===================== DATA COMPUTE =====================
+function getMonthData(){
+  const{year,month}=getCurrentMonth();
+  const today=new Date();
+  const isCurrentMonth=!selectedMonth||(selectedMonth.year===today.getFullYear()&&selectedMonth.month===today.getMonth()+1);
+  const diasMes=daysInMonth(year,month);
+  const diaHoje=isCurrentMonth?today.getDate():diasMes;
+  const diasPassados=Math.max(1,isCurrentMonth?diaHoje-1:diasMes);
+
+  const desc=STATE.desc.filter(r=>r.mes===month&&r.ano===year);
+  const nf=STATE.nf.filter(r=>r.mes===month&&r.ano===year);
+  const trans=STATE.trans; // always current
+
+  // Estoque: latest hid and ani for this month
+  const estKeys=Object.keys(STATE.est).filter(k=>{
+    const[dtStr]=k.split('_');
+    const dt=new Date(dtStr+'T00:00:00');
+    return dt.getFullYear()===year&&dt.getMonth()+1===month;
+  });
+  const latestHidKey=estKeys.filter(k=>k.endsWith('_hid')).sort().pop();
+  const latestAniKey=estKeys.filter(k=>k.endsWith('_ani')).sort().pop();
+  const estHid=latestHidKey?STATE.est[latestHidKey]:{};
+  const estAni=latestAniKey?STATE.est[latestAniKey]:{};
+
+  // Estoque history for chart (abertura = saldo ant)
+  function estHistByDay(field){
+    const m={};
+    estKeys.forEach(k=>{
+      const[dtStr,prod]=k.split('_');
+      const dt=new Date(dtStr+'T00:00:00');
+      const d=dt.getDate();
+      const data=STATE.est[k];
+      if(field==='t_hid'&&prod==='hid')m[d]=data.teciap_hid_ab||0;
+      else if(field==='u_hid'&&prod==='hid')m[d]=data.ultra_hid_ab||0;
+      else if(field==='c_hid'&&prod==='hid')m[d]=data.centro_hid_ab||0;
+    });
+    return m;
+  }
+
+  // Desc by day
+  function descByDay(cod){
+    const m={};
+    desc.filter(r=>r.cliente===cod).forEach(r=>{m[r.dia]=(m[r.dia]||0)+r.pesoDestino;});
+    return m;
+  }
+
+  // Quebra
+  function quebra(cod){
+    const rows=desc.filter(r=>r.cliente===cod);
+    const g=(arr,fn)=>{const f=arr.filter(fn);return{e:f.reduce((s,r)=>s+r.pesoDestino,0),q:f.reduce((s,r)=>s+r.quebra,0)};};
+    return{sinop:g(rows,r=>r.gefF==='1'),mutum:g(rows,r=>r.gefF==='3'),total:g(rows,()=>true)};
+  }
+
+  // Trânsito por cliente (Peso Líquido)
+  function transCod(cod){return trans.filter(r=>r.cliente===cod).reduce((s,r)=>s+r.pesoLiq,0);}
+  const transFerro=trans.filter(r=>r.transp===13746).reduce((s,r)=>s+r.pesoLiq,0);
+
+  // NF
+  function nfByDay(dep,transpCod=null){
+    const m={};
+    nf.filter(r=>r.dep===dep&&(transpCod===null||r.codTransp===transpCod)).forEach(r=>{m[r.dia]=(m[r.dia]||0)+r.qtde;});
+    return m;
+  }
+  function nfTotal(dep,transpCod=null){return Object.values(nfByDay(dep,transpCod)).reduce((a,b)=>a+b,0);}
+  function nfByClient(){
+    const m={};
+    nf.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
+      const c=r.nomeCliente;if(!m[c])m[c]={cod:r.codCliente,byDay:{}};
+      m[c].byDay[r.dia]=(m[c].byDay[r.dia]||0)+r.qtde;
+    });
+    return m;
+  }
+
+  // Carregamento Usina — NF by Cód.Cliente + GEF (1-1-1=Sinop, 1-1-3=Mutum)
+  function usinaReal(codCli){
+    const m={};
+    nf.filter(r=>r.codCliente===codCli).forEach(r=>{
+      if(!m[r.dia])m[r.dia]={s:0,mu:0};
+      if(r.gef==='1-1-1')m[r.dia].s+=r.qtde;
+      else if(r.gef==='1-1-3')m[r.dia].mu+=r.qtde;
+      else m[r.dia].s+=r.qtde; // other GEFs go to sinop
+    });
+    return m;
+  }
+
+  // Previsão: trânsito, Sinop(F=1)+2d, Mutum(F=3)+1d
+  function usinaPrevisao(codCli){
+    const sinop={},mutum={};
+    const todayD=new Date();
+    trans.filter(r=>r.cliente===codCli).forEach(r=>{
+      const em=new Date(r.emissao+'T00:00:00');
+      const vol=r.pesoLiq;
+      if(r.gefF==='1'){const prev=addDays(em,2);const d=diffDays(prev,todayD);sinop[d]=(sinop[d]||0)+vol;}
+      else if(r.gefF==='3'){const prev=addDays(em,1);const d=diffDays(prev,todayD);mutum[d]=(mutum[d]||0)+vol;}
+    });
+    return{sinop,mutum};
+  }
+
+  // Ferrovia
+  const ferroCarrBD={};
+  nf.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{ferroCarrBD[r.dia]=(ferroCarrBD[r.dia]||0)+r.qtde;});
+  const ferroDescBD={};
+  desc.filter(r=>r.transp===13746).forEach(r=>{ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;});
+  const ferroTotal=Object.values(ferroCarrBD).reduce((a,b)=>a+b,0);
+  const ferroDescTotal=Object.values(ferroDescBD).reduce((a,b)=>a+b,0);
+  const ferroDays=Math.max(1,Object.values(ferroCarrBD).filter(v=>v>0).length);
+  const mediaFerro=ferroTotal/ferroDays;
+
+  // Formulas
+  function calcBacklog(byDay,ct){
+    const pd=ct/diasMes;
+    let bl=-pd;
+    for(let d=1;d<diaHoje;d++)bl=(byDay[d]||0)-pd+bl;
+    return bl;
+  }
+  function calcVolProj(byDay){
+    const total=Object.values(byDay).reduce((a,b)=>a+b,0);
+    return(total/diasPassados)*diasMes;
+  }
+
+  const tBD=descByDay(CLI_T),uBD=descByDay(CLI_U),cBD=descByDay(CLI_C);
+  const tRec=Object.values(tBD).reduce((a,b)=>a+b,0);
+  const uRec=Object.values(uBD).reduce((a,b)=>a+b,0);
+  const cRec=Object.values(cBD).reduce((a,b)=>a+b,0);
+  const cExp=nfTotal(DEP_C);
+
+  const ferroCt=STATE.config.ferro.ct,ferroMin=STATE.config.ferro.min;
+
+  return{
+    dias_mes:diasMes,diaHoje,year,month,
+    t:{rec:tRec,expFerro:nfTotal(DEP_T,RUMO),expRodo:nfTotal(DEP_T)-nfTotal(DEP_T,RUMO)-nfTotal(DEP_T,null)+nfTotal(DEP_T)-nfTotal(DEP_T,RUMO),
+       ct:STATE.config.teciap.top,saldo:tRec-STATE.config.teciap.top,backlog:calcBacklog(tBD,STATE.config.teciap.top),
+       proj:calcVolProj(tBD),trans:transCod(CLI_T),
+       estHid:STATE.config.teciap.hid,estAni:STATE.config.teciap.ani,hidFe:estHid.teciap_hid_fe||0,aniFe:estAni.teciap_ani_fe||0,
+       giro:tRec/((STATE.config.teciap.hid||1)+(STATE.config.teciap.ani||0)),
+       descBD:tBD,carrBD:nfByDay(DEP_T),estBD:estHistByDay('t_hid'),
+       quebra:quebra(CLI_T),usinaReal:usinaReal(CLI_T),usinaPrevisao:usinaPrevisao(CLI_T)},
+    u:{rec:uRec,exp:nfTotal(DEP_U),ct:STATE.config.ultra.top,saldo:uRec-STATE.config.ultra.top,
+       backlog:calcBacklog(uBD,STATE.config.ultra.top),proj:calcVolProj(uBD),trans:transCod(CLI_U),
+       estHid:STATE.config.ultra.hid,hidFe:estHid.ultra_hid_fe||0,
+       giro:uRec/(STATE.config.ultra.hid||1),
+       descBD:uBD,carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
+       quebra:quebra(CLI_U),usinaReal:usinaReal(CLI_U),usinaPrevisao:usinaPrevisao(CLI_U)},
+    c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cExp-STATE.config.centro.top,
+       backlog:calcBacklog(nfByDay(DEP_C),STATE.config.centro.top),proj:calcVolProj(nfByDay(DEP_C)),trans:transCod(CLI_C),
+       estHid:STATE.config.centro.hid,hidFe:estHid.centro_hid_fe||0,
+       giro:cRec/(STATE.config.centro.hid||1),
+       descBD:cBD,carrBD:nfByDay(DEP_C),estBD:estHistByDay('c_hid'),
+       quebra:quebra(CLI_C),usinaReal:usinaReal(CLI_C),usinaPrevisao:usinaPrevisao(CLI_C)},
+    ferro:{carrTotal:ferroTotal,descTotal:ferroDescTotal,ct:ferroCt,min:ferroMin,
+           saldoCt:ferroTotal-ferroCt,backlog:calcBacklog(ferroCarrBD,ferroCt),
+           proj:mediaFerro*diasMes,transito:transFerro,vagoes:Math.round(transFerro/98),media:mediaFerro,
+           saldoMin:ferroTotal-ferroMin,backlogMin:calcBacklog(ferroCarrBD,ferroMin),
+           carrBD:ferroCarrBD,descBD:ferroDescBD,byClient:nfByClient()}
+  };
+}
+
+// ===================== RENDER =====================
+function renderAll(){
+  if(!STATE.nf.length&&!STATE.desc.length)return;
+  const D=getMonthData();window._D=D;
+  renderTerminal(D);renderFerrovia(D);renderTOP(D);updateMonthFilter();
+}
+
+function mkC(id,labels,data,color){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const el=document.getElementById(id);if(!el)return;
+  CH[id]=new Chart(el,{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(255,255,255,.03)'),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}}},
+      scales:{x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+              y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+}
+function lbls(D){return Array.from({length:D.dias_mes},(_,i)=>(i+1)+'/'+D.month);}
+function bda(bd,D){return Array.from({length:D.dias_mes},(_,i)=>bd[i+1]||0);}
+
+function rKPI(id,items){
+  document.getElementById(id).innerHTML=items.map(m=>`<div class="kpi"><div class="klbl">${m.l}</div><div class="kval ${m.c||''}">${m.v}</div>${m.sl?`<div class="ksub-lbl">${m.sl}</div><div class="ksub-val">${m.sv}</div>`:''}</div>`).join('');
+}
+
+function rUsina(id,usinaReal,prev,diaRef,mes){
+  const el=document.getElementById(id);if(!el)return;
+  const today=new Date();
+  // REALIZADO D até D-3 (dias D, D-1, D-2, D-3 = diaRef, diaRef-1, diaRef-2, diaRef-3)
+  let rRows='',rS=0,rM=0,rT=0;
+  [0,-1,-2,-3].forEach(diff=>{
+    const day=diaRef+diff;if(day<1)return;
+    const d=usinaReal[day]||{s:0,mu:0};
+    const t=d.s+d.mu;rS+=d.s;rM+=d.mu;rT+=t;
+    const lbl=diff===0?`D ${String(day).padStart(2,'0')}/${String(mes).padStart(2,'0')}`:`D${diff} ${String(day).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+    rRows+=`<tr><td>${lbl}</td><td>${d.s>0?fmt(d.s,0):'-'}</td><td>${d.mu>0?fmt(d.mu,0):'-'}</td><td>${t>0?fmt(t,0):'-'}</td></tr>`;
+  });
+  // PREVISÃO D, D+1, D+2 (a partir de hoje)
+  let pRows='',pS=0,pM=0,pT=0;
+  [0,1,2].forEach(diff=>{
+    const s=prev.sinop[diff]||0,mu=prev.mutum[diff]||0,t=s+mu;
+    pS+=s;pM+=mu;pT+=t;
+    const day=today.getDate()+diff;
+    const lbl=diff===0?`D ${String(day).padStart(2,'0')}/${String(mes).padStart(2,'0')}`:`D+${diff} ${String(day).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+    pRows+=`<tr><td>${lbl}</td><td>${s>0?fmt(s,0):'-'}</td><td>${mu>0?fmt(mu,0):'-'}</td><td>${t>0?fmt(t,0):'-'}</td></tr>`;
+  });
+  // ATRASADO diff < 0
+  let aRows='',aS=0,aM=0,aT=0;
+  [-1,-2,-3].forEach(diff=>{
+    const s=prev.sinop[diff]||0,mu=prev.mutum[diff]||0,t=s+mu;
+    aS+=s;aM+=mu;aT+=t;
+    const day=today.getDate()+diff;
+    aRows+=`<tr><td>D${diff} ${String(day).padStart(2,'0')}/${String(mes).padStart(2,'0')}</td><td>${s>0?fmt(s,0):'-'}</td><td>${mu>0?fmt(mu,0):'-'}</td><td>${t>0?fmt(t,0):'-'}</td></tr>`;
+  });
+  const gtS=Object.entries(prev.sinop).filter(([k])=>+k<-3).reduce((a,[,v])=>a+v,0);
+  const gtM=Object.entries(prev.mutum).filter(([k])=>+k<-3).reduce((a,[,v])=>a+v,0);
+  aS+=gtS;aM+=gtM;aT+=gtS+gtM;
+  aRows+=`<tr><td>&gt;D-3</td><td>${gtS>0?fmt(gtS,0):'-'}</td><td>${gtM>0?fmt(gtM,0):'-'}</td><td>${gtS+gtM>0?fmt(gtS+gtM,0):'-'}</td></tr>`;
+
+  el.innerHTML=`
+    <div class="tcard"><div class="tcard-head">Carregamento Usina</div><table>
+      <tr><td></td><td>Sinop</td><td>N.Mutum</td><td>Total</td></tr>${rRows}
+      <tr class="tr-tot"><td>Total</td><td>${fmt(rS,0)}</td><td>${fmt(rM,0)}</td><td>${fmt(rT,0)}</td></tr>
+    </table></div>
+    <div class="tcard"><div class="tcard-head">Data Prevista</div><table>
+      <tr><td></td><td>Sinop</td><td>N.Mutum</td><td>Total</td></tr>${pRows}
+      <tr class="tr-tot"><td>Total</td><td>${pS>0?fmt(pS,0):'-'}</td><td>${pM>0?fmt(pM,0):'-'}</td><td>${pT>0?fmt(pT,0):'-'}</td></tr>
+    </table></div>
+    <div class="tcard"><div class="tcard-head danger">Atrasado</div><table>
+      <tr><td></td><td>Sinop</td><td>N.Mutum</td><td>Total</td></tr>${aRows}
+      <tr class="tr-tot"><td>Total</td><td>${aS>0?fmt(aS,0):'-'}</td><td>${aM>0?fmt(aM,0):'-'}</td><td>${aT>0?fmt(aT,0):'-'}</td></tr>
+    </table></div>`;
+}
+
+function rQuebra(id,q){
+  const el=document.getElementById(id);if(!el)return;
+  const iS=q.sinop.e>0?q.sinop.q/q.sinop.e*100:0;
+  const iM=q.mutum.e>0?q.mutum.q/q.mutum.e*100:0;
+  const iT=q.total.e>0?q.total.q/q.total.e*100:0;
+  el.innerHTML=`<table><tr><th>Filial</th><th>Entrada</th><th>Quebra</th><th>Índice</th></tr>
+    <tr><td>Sinop</td><td>${fmt(q.sinop.e,0)}</td><td>${fmt(q.sinop.q,0)}</td><td>${iS.toFixed(2)}%</td></tr>
+    <tr><td>Nova Mutum</td><td>${fmt(q.mutum.e,0)}</td><td>${fmt(q.mutum.q,0)}</td><td>${iM.toFixed(2)}%</td></tr>
+    <tr class="tr-tot"><td>Total</td><td>${fmt(q.total.e,0)}</td><td>${fmt(q.total.q,0)}</td><td>${iT.toFixed(2)}%</td></tr>
+  </table>`;
+}
+
+function renderTerminal(D){
+  const L=lbls(D),cfg=STATE.config;
+  // TECIAP
+  // Expedido rodo = total - ferro - perda(rot89)
+  const tExpFerro=D.t.expFerro;
+  const tExpTotal=Object.values(D.t.carrBD).reduce((a,b)=>a+b,0);
+  const tExpPerda=D.t.expFerro; // placeholder, calc separately
+  // Recalc rodo properly
+  const tNfAll=STATE.nf.filter(r=>r.dep===DEP_T&&r.mes===D.month&&r.ano===D.year);
+  const tFerroVal=tNfAll.filter(r=>r.codTransp===RUMO).reduce((s,r)=>s+r.qtde,0);
+  const tPerdaVal=tNfAll.filter(r=>r.rotina===89).reduce((s,r)=>s+r.qtde,0);
+  const tTotalVal=tNfAll.reduce((s,r)=>s+r.qtde,0);
+  const tRodoVal=tTotalVal-tFerroVal-tPerdaVal;
+
+  rKPI('kpi-teciap',[
+    {l:'Vol. Recebido Caminhões (m³)',v:fmt(D.t.rec,0)},
+    {l:'Expedido Ferrovia (m³)',v:fmt(tFerroVal,0),sl:'Expedido Rodo/Transf (m³)',sv:fmt(Math.max(0,tRodoVal),0)},
+    {l:'Take or Pay / Mês (m³)',v:fmt(cfg.teciap.top,0)},
+    {l:'Saldo Take or Pay (m³)',v:fmt(D.t.saldo,0),c:D.t.saldo<0?'neg':'pos'},
+    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.t.backlog,0)},
+    {l:'Volume Projetado | Recebimento',v:fmt(D.t.proj,0)},
+    {l:'Trânsito Caminhões para Teciap (m³)',v:fmt(D.t.trans,0)},
+    {l:'Estática Contratada | Hidratado',v:fmt(cfg.teciap.hid,0),sl:'Estática Contratada | Anidro',sv:fmt(cfg.teciap.ani,0)},
+    {l:'Estoque atual | Hidratado (m³)',v:fmt(D.t.hidFe,0),sl:'Estoque atual | Anidro (m³)',sv:fmt(D.t.aniFe,0)},
+    {l:'Giro',v:fmt(D.t.giro,2)}
+  ]);
+  mkC('ch-td',L,bda(D.t.descBD,D),'#4f8ef7');
+  mkC('ch-tc',L,bda(D.t.carrBD,D),'#22c55e');
+  mkC('ch-te',L,bda(D.t.estBD,D),'#818cf8');
+  rUsina('usina-teciap',D.t.usinaReal,D.t.usinaPrevisao,D.diaHoje-1,D.month);
+  rQuebra('quebra-teciap',D.t.quebra);
+
+  // ULTRACARGO
+  const uNfAll=STATE.nf.filter(r=>r.dep===DEP_U&&r.mes===D.month&&r.ano===D.year);
+  const uExpVal=uNfAll.filter(r=>r.codTransp===RUMO).reduce((s,r)=>s+r.qtde,0);
+  rKPI('kpi-ultra',[
+    {l:'Vol. Recebido Caminhões (m³)',v:fmt(D.u.rec,0)},
+    {l:'Expedido (m³)',v:fmt(uExpVal,0)},
+    {l:'Take or Pay / Mês (m³)',v:fmt(cfg.ultra.top,0)},
+    {l:'Saldo Take or Pay (m³)',v:fmt(D.u.saldo,0),c:D.u.saldo<0?'neg':'pos'},
+    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.u.backlog,0)},
+    {l:'Volume Projetado | Recebimento',v:fmt(D.u.proj,0)},
+    {l:'Transitório Caminhões Ultracargo (m³)',v:fmt(D.u.trans,0)},
+    {l:'Estática Contratada | Hidratado',v:fmt(cfg.ultra.hid,0)},
+    {l:'Estoque atual | Hidratado (m³)',v:fmt(D.u.hidFe,0)},
+    {l:'Giro',v:fmt(D.u.giro,2)}
+  ]);
+  mkC('ch-ud',L,bda(D.u.descBD,D),'#4f8ef7');
+  mkC('ch-uc',L,bda(D.u.carrBD,D),'#22c55e');
+  mkC('ch-ue',L,bda(D.u.estBD,D),'#818cf8');
+  rUsina('usina-ultra',D.u.usinaReal,D.u.usinaPrevisao,D.diaHoje-1,D.month);
+  rQuebra('quebra-ultra',D.u.quebra);
+
+  // CENTROESTE
+  const cNfAll=STATE.nf.filter(r=>r.dep===DEP_C&&r.mes===D.month&&r.ano===D.year);
+  const cExpVal=cNfAll.reduce((s,r)=>s+r.qtde,0);
+  rKPI('kpi-centro',[
+    {l:'Vol. Recebido Caminhões (m³)',v:fmt(D.c.rec,0)},
+    {l:'Expedido Vagões (m³)',v:fmt(cExpVal,0)},
+    {l:'Contrato / Mês (m³)',v:fmt(cfg.centro.top,0)},
+    {l:'Saldo Contrato/Mês (m³)',v:fmt(D.c.saldo,0),c:D.c.saldo<0?'neg':'pos'},
+    {l:'Backlog/dia Expedição VTs (m³)',v:fmt(D.c.backlog,0)},
+    {l:'Volume Projetado',v:fmt(D.c.proj,0)},
+    {l:'Trânsito Caminhões (m³)',v:fmt(D.c.trans,0)},
+    {l:'Estática Contratada (m³)',v:fmt(cfg.centro.hid,0)},
+    {l:'Estoque atual (m³)',v:fmt(D.c.hidFe,0)},
+    {l:'Giro',v:fmt(D.c.giro,2)}
+  ]);
+  mkC('ch-cd',L,bda(D.c.descBD,D),'#4f8ef7');
+  mkC('ch-cc',L,bda(D.c.carrBD,D),'#22c55e');
+  mkC('ch-ce',L,bda(D.c.estBD,D),'#818cf8');
+  rUsina('usina-centro',D.c.usinaReal,D.c.usinaPrevisao,D.diaHoje-1,D.month);
+  rQuebra('quebra-centro',D.c.quebra);
+}
+
+function renderFerrovia(D){
+  const L=lbls(D);
+  rKPI('kpi-ferro',[
+    {l:'Vol. Carregado TECIAP/Ultracargo',v:fmt(D.ferro.carrTotal,0)},
+    {l:'Vol. Descarregado Paulínia (m³)',v:fmt(D.ferro.descTotal,0)},
+    {l:'Contrato Transporte/Mês (m³)',v:fmt(D.ferro.ct,0)},
+    {l:'Saldo Contrato Transporte (m³)',v:fmt(D.ferro.saldoCt,0),c:D.ferro.saldoCt<0?'neg':'pos'},
+    {l:'Backlog/dia Carregamento VT (m³)',v:fmt(D.ferro.backlog,0)},
+    {l:'Volume Projetado',v:fmt(D.ferro.proj,0)},
+    {l:'Trânsito Ferroviário (m³)',v:fmt(D.ferro.transito,0)},
+    {l:'Vagões em Trânsito',v:fmt(D.ferro.vagoes,0)},
+    {l:'Média Carregamento Mês',v:fmt(D.ferro.media,0)},
+    {l:'Volume Mínimo Rumo/Mês (m³)',v:fmt(D.ferro.min,0)},
+    {l:'Saldo Vol. Mínimo Rumo (m³)',v:fmt(D.ferro.saldoMin,0),c:D.ferro.saldoMin<0?'neg':'pos'},
+    {l:'Backlog/dia Mínimo Rumo (m³)',v:fmt(D.ferro.backlogMin,0)}
+  ]);
+  mkC('ch-fc',L,bda(D.ferro.carrBD,D),'#4f8ef7');
+  mkC('ch-fd',L,bda(D.ferro.descBD,D),'#22c55e');
+  const clients=Object.keys(D.ferro.byClient);
+  let selClient=window._ferroClient||'all';
+  document.getElementById('ferro-filter').innerHTML=
+    `<button class="ferro-btn ${selClient==='all'?'active':''}" onclick="setFerroClient('all')">🌐 Todos</button>`
+    +clients.map(c=>`<button class="ferro-btn ${selClient===c?'active':''}" onclick="setFerroClient('${c}')">${c.split(' ')[0]}</button>`).join('');
+  renderFerroTable(D);
+}
+function setFerroClient(c){window._ferroClient=c;renderFerroTable(window._D);}
+function renderFerroTable(D){
+  const sel=window._ferroClient||'all';
+  const clients=Object.keys(D.ferro.byClient);
+  const show=sel==='all'?clients:[sel];
+  let rows='';
+  for(let d=1;d<=D.dias_mes;d++){
+    const vals=show.map(c=>D.ferro.byClient[c]?.byDay[d]||0);
+    const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)continue;
+    rows+=`<tr><td>${String(d).padStart(2,'0')}/${String(D.month).padStart(2,'0')}</td>`;
+    if(sel==='all')vals.forEach(v=>{rows+=`<td>${v>0?fmt(v,0):'-'}</td>`;});
+    rows+=`<td>${fmt(tot,0)}</td></tr>`;
+  }
+  const tots=show.map(c=>Object.values(D.ferro.byClient[c]?.byDay||{}).reduce((a,b)=>a+b,0));
+  document.getElementById('tbl-ferro').innerHTML=`<table>
+    <tr><th>Data</th>${sel==='all'?show.map(c=>`<th>${c.split(' ')[0]}</th>`).join(''):''}
+    <th>Total</th></tr>${rows}
+    <tr class="tr-tot"><td>Total</td>${sel==='all'?tots.map(t=>`<td>${fmt(t,0)}</td>`).join(''):''}
+    <td>${fmt(tots.reduce((a,b)=>a+b,0),0)}</td></tr>
+  </table>`;
+}
+
+function renderTOP(D){
+  STATE.config.top_fat[D.month-1]=Math.round(D.ferro.carrTotal);
+  function ic(v){return v>=100?'iok':v>=80?'iwarn':'ibad';}
+  function row(i){
+    const fat=STATE.config.top_fat[i]||0,min=STATE.config.top_min[i],cont=STATE.config.top_cont[i];
+    const im=min>0?Math.round(fat/min*100):0,ic2=cont>0?Math.round(fat/cont*100):0;
+    return`<tr><td>${MESES[i]}</td><td class="${fat>0?'fat':''}">${fat>0?fmt(fat):'-'}</td>
+      <td><input type="number" value="${min}" onchange="STATE.config.top_min[${i}]=+this.value;renderTOP(window._D)"></td>
+      <td class="${fat>0?ic(im):''}">${fat>0?im+'%':'0%'}</td>
+      <td><input type="number" value="${cont}" onchange="STATE.config.top_cont[${i}]=+this.value;renderTOP(window._D)"></td>
+      <td class="${fat>0?ic(ic2):''}">${fat>0?ic2+'%':'0%'}</td></tr>`;
+  }
+  function tbl(id,idxs){
+    const fatT=idxs.reduce((s,i)=>s+(STATE.config.top_fat[i]||0),0);
+    const minT=idxs.reduce((s,i)=>s+STATE.config.top_min[i],0),contT=idxs.reduce((s,i)=>s+STATE.config.top_cont[i],0);
+    const im=minT>0?Math.round(fatT/minT*100):0,ic2=contT>0?Math.round(fatT/contT*100):0;
+    document.getElementById(id).innerHTML=`<table>
+      <tr><th>Mês</th><th>Faturado</th><th>Mín. Contratual</th><th>Índice</th><th>Contrato</th><th>Índice</th></tr>
+      ${idxs.map(i=>row(i)).join('')}
+      <tr class="tr-tot"><td>Total</td><td class="fat">${fmt(fatT)}</td><td>${fmt(minT)}</td>
+        <td class="${ic(im)}">${im}%</td><td>${fmt(contT)}</td><td class="${ic(ic2)}">${ic2}%</td></tr>
+    </table>`;
+  }
+  const ai=Array.from({length:12},(_,i)=>i);
+  const fatA=ai.reduce((s,i)=>s+(STATE.config.top_fat[i]||0),0);
+  const minA=ai.reduce((s,i)=>s+STATE.config.top_min[i],0),contA=ai.reduce((s,i)=>s+STATE.config.top_cont[i],0);
+  const imA=minA>0?Math.round(fatA/minA*100):0,icA=contA>0?Math.round(fatA/contA*100):0;
+  document.getElementById('top-anual').innerHTML=`<table>
+    <tr><th>Anual</th><th>Faturado</th><th>Mín. Contratual</th><th>Índice</th><th>Contrato</th><th>Índice</th></tr>
+    ${ai.map(i=>row(i)).join('')}
+    <tr class="tr-tot"><td>Total</td><td class="fat">${fmt(fatA)}</td><td>${fmt(minA)}</td>
+      <td class="${ic(imA)}">${imA}%</td><td>${fmt(contA)}</td><td class="${ic(icA)}">${icA}%</td></tr>
+  </table>`;
+  tbl('top-t1',[0,1,2]);tbl('top-t2',[3,4,5]);tbl('top-t3',[6,7,8]);tbl('top-t4',[9,10,11]);
+}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
+}
+function showTerm(id,btn){
+  ['teciap','ultra','centro'].forEach(t=>{document.getElementById('term-'+t).style.display=t===id?'block':'none';});
+  document.querySelectorAll('.term-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+}
+function updateBadge(){
+  const n=new Date();
+  document.getElementById('ubadge').textContent='Atualizado: '+n.toLocaleDateString('pt-BR')+' '+n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+</script>
+</body>
+</html>
