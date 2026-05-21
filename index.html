@@ -572,12 +572,13 @@ async function processNFLocal(buf){
       newRows.push({
         _key:key,nrnf:String(r['Nr. NF']||''),
         dt:dateToStr(dt),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
-        dep:depNorm,           // terminal normalizado: TECIAP / ULTRACARGO RONDON / CENTROESTE
-        depOrig:dep,           // depósito original do arquivo
-        tipo:isExpedicao?'exp':'rec', // exp=expedição saindo, rec=recebimento chegando
+        dep:depNorm,
+        depOrig:dep,
+        tipo:isExpedicao?'exp':'rec',
         gef:String(r['GEF']||'').trim(),
         codCliente:codCli,nomeCliente:String(r['Nome Cliente']||'').trim(),
         codTransp:pn(r['Código Transportadora']),rotina:pn(r['Cód. Rotina']),
+        nomeRotina:String(r['Nome Rotina']||'').trim().toUpperCase(),
         qtde:pn(r['Qtde'])/1000,
       });
       existingKeys.add(key);
@@ -1029,11 +1030,14 @@ function getMonthData(){
   const ferroCarrBD={};
   nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{ferroCarrBD[r.dia]=(ferroCarrBD[r.dia]||0)+r.qtde;});
 
-  // Ferrovia — descarga: descargas com transportador RUMO (13746) para clientes ferroviários
-  // Clientes: 11966 (Logum), 7605 (Terminal Paulínia), 3492 (Tercom) + qualquer outro com transp=13746
+  // Ferrovia — descarga nos terminais destino: planilha Descargas
+  // Filtro OBRIGATÓRIO: cliente IN [11966 Logum, 7605 Terminal Paulínia, 3492 Tercom] AND transportador = 13746 (RUMO)
+  const FERRO_DESC_CLIS=new Set([11966,7605,3492]);
   const ferroDescBD={};
-  const ferroDescByCli={};  // {nomeCliente: {byDay: {dia: vol}}}
-  desc.filter(r=>r.transp===13746).forEach(r=>{
+  STATE.desc.filter(r=>{
+    // Filtrar pelo mês/ano do período selecionado
+    return r.mes===month&&r.ano===year&&r.transp===13746&&FERRO_DESC_CLIS.has(r.cliente);
+  }).forEach(r=>{
     ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;
   });
 
@@ -1041,7 +1045,6 @@ function getMonthData(){
   function nfByClient(){
     const m={};
     nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
-      // Nome curto: primeira palavra significativa
       const nomeCurto=r.nomeCliente.split(' ').slice(0,2).join(' ');
       if(!m[nomeCurto])m[nomeCurto]={cod:r.codCliente,byDay:{}};
       m[nomeCurto].byDay[r.dia]=(m[nomeCurto].byDay[r.dia]||0)+r.qtde;
@@ -1066,11 +1069,19 @@ function getMonthData(){
     return(total/diasPassados)*diasMes;
   }
 
+  const ROTINAS_CENTRO_SET=new Set(['VENDAS','REMESSA PARA ARMAZENAGEM','REMESSA - FATURAMENTO ANTECIPADO','REMESSA - VENDA ENTREGA FUTURA']);
+
   const tBD=descByDay(CLI_T),uBD=descByDay(CLI_U),cBD=descByDay(CLI_C);
   const tRec=Object.values(tBD).reduce((a,b)=>a+b,0);
   const uRec=Object.values(uBD).reduce((a,b)=>a+b,0);
   const cRec=Object.values(cBD).reduce((a,b)=>a+b,0);
-  const cExp=nfTotal(DEP_C);
+
+  // Centroeste: expedido filtrado por Nome Rotina
+  const cExpBD={};
+  nfExp.filter(r=>r.dep===DEP_C&&ROTINAS_CENTRO_SET.has(r.nomeRotina)).forEach(r=>{
+    cExpBD[r.dia]=(cExpBD[r.dia]||0)+r.qtde;
+  });
+  const cExp=Object.values(cExpBD).reduce((a,b)=>a+b,0);
 
   const ferroCt=STATE.config.ferro.ct,ferroMin=STATE.config.ferro.min;
 
@@ -1089,11 +1100,11 @@ function getMonthData(){
        giro:uRec/(STATE.config.ultra.hid||1),
        descBD:uBD,carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
        quebra:quebra(CLI_U),usinaReal:usinaReal(CLI_U),usinaPrevisao:usinaPrevisao(CLI_U)},
-    c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cRec-STATE.config.centro.top,
-       backlog:calcBacklog(nfByDay(DEP_C),STATE.config.centro.top),proj:calcVolProj(nfByDay(DEP_C)),trans:transCod(CLI_C),
+    c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cExp-STATE.config.centro.top,
+       backlog:calcBacklog(cExpBD,STATE.config.centro.top),proj:calcVolProj(cExpBD),trans:transCod(CLI_C),
        estHid:STATE.config.centro.hid,hidFe:estHid.centro_hid_fe||0,
        giro:cRec/(STATE.config.centro.hid||1),
-       descBD:cBD,carrBD:nfByDay(DEP_C),estBD:estHistByDay('c_hid'),
+       descBD:cBD,carrBD:cExpBD,estBD:estHistByDay('c_hid'),
        quebra:quebra(CLI_C),usinaReal:usinaReal(CLI_C),usinaPrevisao:usinaPrevisao(CLI_C)},
     ferro:{carrTotal:ferroTotal,descTotal:ferroDescTotal,ct:ferroCt,min:ferroMin,
            saldoCt:ferroTotal-ferroCt,backlog:calcBacklog(ferroCarrBD,ferroCt),
@@ -1314,8 +1325,10 @@ function renderTerminal(D){
   rQuebra('quebra-ultra',D.u.quebra);
 
   // CENTROESTE
-  const cNfAll=STATE.nf.filter(r=>r.dep===DEP_C&&r.mes===D.month&&r.ano===D.year);
-  const cExpVal=cNfAll.reduce((s,r)=>s+r.qtde,0);
+  // Expedido = NFs com Depósito Saída = CENTROESTE e Nome Rotina IN lista aprovada
+  const ROTINAS_CENTRO=new Set(['VENDAS','REMESSA PARA ARMAZENAGEM','REMESSA - FATURAMENTO ANTECIPADO','REMESSA - VENDA ENTREGA FUTURA']);
+  const cNfAll=STATE.nf.filter(r=>r.dep===DEP_C&&r.mes===D.month&&r.ano===D.year&&(r.tipo==='exp'||!r.tipo));
+  const cExpVal=cNfAll.filter(r=>ROTINAS_CENTRO.has(r.nomeRotina)).reduce((s,r)=>s+r.qtde,0);
   rKPI('kpi-centro',[
     {l:'Vol. Recebido Caminhões (m³)',v:fmt(D.c.rec,0)},
     {l:'Expedido Vagões (m³)',v:fmt(cExpVal,0)},
