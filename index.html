@@ -526,7 +526,9 @@ async function processNFLocal(buf){
   setLtxt('Lendo Notas Fiscais...');
   const wb=XLSX.read(buf,{type:'array',cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
-  const allRows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:false,range:1});
+  // raw:true garante datas como Date objects (não strings)
+  const allRows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:true,range:1});
+  console.log('[NF] Colunas:',allRows.length>0?Object.keys(allRows[0]):[]);
   const DEPS=[DEP_T,DEP_U,DEP_C];
   const existingKeys=new Set(STATE.nf.map(r=>r._key));
   const newRows=[];
@@ -536,8 +538,13 @@ async function processNFLocal(buf){
     for(const r of chunk){
       const dep=String(r['Depósito Saída']||'').trim();
       if(!DEPS.includes(dep))continue;
-      const dt=toDate(r['Data Hora Saida']);if(!dt)continue;
-      // Key: NF + dep + data (unique per note per terminal per day)
+      // Data como Date object (raw:true) ou serial Excel
+      let dt=null;
+      const rawDt=r['Data Hora Saida'];
+      if(rawDt instanceof Date){dt=rawDt;}
+      else if(typeof rawDt==='number'&&rawDt>40000){const e=new Date(1899,11,30);dt=new Date(e.getTime()+rawDt*86400000);}
+      else if(typeof rawDt==='string'&&rawDt.trim()){dt=toDate(rawDt);}
+      if(!dt||isNaN(dt))continue;
       const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+dep+'|'+dateToStr(dt);
       if(existingKeys.has(key))continue;
       newRows.push({
@@ -554,74 +561,135 @@ async function processNFLocal(buf){
     await sl(10);
   }
   STATE.nf=[...STATE.nf,...newRows];
+  console.log('[NF] Total:',STATE.nf.length,'| Novos:',newRows.length);
   return newRows;
 }
 
 async function processDescLocal(buf){
   setLtxt('Lendo Descargas...');
-  const allRows=parseXL(buf,1);
+  // Lê o arquivo usando índices numéricos diretos para evitar problemas com nomes de colunas
+  // Estrutura real do arquivo (confirmada):
+  // Linha 0: título mesclado (pular)
+  // Linha 1: cabeçalho real
+  // Linha 2+: dados
+  // Índices (0-based): G=0, E=1, F=2, NºNota=3, Cliente=7, PesoDestino=13,
+  //   Transportador=16, DataSaída=29, Quebra=30, PesoLíquido=12
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  // Usar header:1 para obter arrays de arrays (independente de nomes)
+  const allArr=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+
+  // Detectar linha de cabeçalho (contém 'Nº Nota' ou 'Cliente')
+  let hdrIdx=1;
+  for(let i=0;i<Math.min(allArr.length,5);i++){
+    const row=allArr[i];
+    if(row&&row.some(v=>String(v||'').includes('Nota'))){hdrIdx=i;break;}
+  }
+  const hdrs=allArr[hdrIdx];
+  // Mapear índices pelo nome do cabeçalho
+  const ci={};
+  hdrs.forEach((h,i)=>{if(h!=null)ci[String(h).trim()]=i;});
+  // Índices com fallback para posição conhecida
+  const iG    = ci['G']    !=null ? ci['G']    : 0;
+  const iF    = ci['F']    !=null ? ci['F']    : 2;
+  const iNota = ci['Nº Nota']!=null? ci['Nº Nota']: 3;
+  const iCli  = ci['Cliente']!=null? ci['Cliente']: 7;
+  const iPesoDest = ci['Peso Destino']!=null? ci['Peso Destino']: 13;
+  const iPesoLiq  = ci['Peso Líquido']!=null? ci['Peso Líquido']: 12;
+  const iTransp   = ci['Transportador']!=null? ci['Transportador']: 16;
+  const iSaida    = ci['Data Saída']!=null? ci['Data Saída']: 29;
+  const iQuebra   = ci['Quebra']!=null? ci['Quebra']: 30;
+
+  console.log('[Descargas] Índices mapeados:',{iG,iF,iNota,iCli,iPesoDest,iPesoLiq,iTransp,iSaida,iQuebra});
+
   const CODS=[CLI_T,CLI_U,CLI_C];
   const existingKeys=new Set(STATE.desc.map(r=>r._key));
   const newRows=[];
-  // Detectar nome real da coluna G (índice 6) — pode variar conforme o arquivo
-  let colG=null;
-  if(allRows.length>0){
-    const keys=Object.keys(allRows[0]);
-    // Tentar pelo nome exato primeiro, depois pela posição (índice 6)
-    const candidates=['G','g','Coluna G'];
-    colG=candidates.find(c=>keys.includes(c));
-    if(!colG){
-      // Fallback: usar a 7ª coluna (índice 6) seja qual for o nome
-      colG=keys[6]||null;
+  const dataRows=allArr.slice(hdrIdx+1);
+
+  for(const r of dataRows){
+    if(!r)continue;
+    // Pular linhas de mescla: coluna G (índice iG) deve ter valor
+    const gVal=r[iG];
+    if(gVal===null||gVal===undefined||gVal==='')continue;
+
+    const cod=pn(r[iCli]);if(!CODS.includes(cod))continue;
+
+    // Data Saída: o XLSX.js com cellDates:true+raw:true entrega Date object ou número serial Excel
+    let dt=null;
+    const rawDt=r[iSaida];
+    if(rawDt instanceof Date){dt=rawDt;}
+    else if(typeof rawDt==='number'&&rawDt>40000){
+      // Número serial Excel → converter para data
+      const excelEpoch=new Date(1899,11,30);
+      dt=new Date(excelEpoch.getTime()+rawDt*86400000);
     }
-  }
-  for(const r of allRows){
-    // Skip blank rows (mesclagem): coluna G (índice 6) deve ter valor
-    if(colG&&r[colG]===null&&r[colG]!==0)continue;
-    if(!colG){
-      // sem coluna G identificada, não filtrar por ela
-    }
-    const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
-    const dt=toDate(r['Data Saída']);if(!dt)continue;
-    // Key: Nº Nota + Cliente + data + peso (garante unicidade mesmo com NF duplicada)
-    const peso=pn(r['Peso Destino']);
-    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dateToStr(dt)+'|'+Math.round(peso);
+    else if(typeof rawDt==='string'&&rawDt.trim()){dt=toDate(rawDt);}
+    if(!dt||isNaN(dt))continue;
+
+    const peso=typeof r[iPesoDest]==='number'?r[iPesoDest]:pn(r[iPesoDest]);
+    const nota=String(r[iNota]||'').trim();
+    const gefF=String(r[iF]||'').trim().replace('.0','');
+
+    // Chave: NºNota + Cliente + DataSaída + PesoDestino (evita duplicatas e falsos positivos)
+    const key=nota+'|'+cod+'|'+dateToStr(dt)+'|'+Math.round(peso);
     if(existingKeys.has(key))continue;
+
     newRows.push({
-      _key:key,nrnota:String(r['Nº Nota']||''),
+      _key:key,nrnota:nota,
       dt:dateToStr(dt),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
-      cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
-      pesoDestino:peso/1000,pesoLiq:pn(r['Peso Líquido'])/1000,
-      quebra:pn(r['Quebra'])/1000,transp:pn(r['Transportador']),
+      cliente:cod,gefF,
+      pesoDestino:peso/1000,
+      pesoLiq:(typeof r[iPesoLiq]==='number'?r[iPesoLiq]:pn(r[iPesoLiq]))/1000,
+      quebra:(typeof r[iQuebra]==='number'?r[iQuebra]:pn(r[iQuebra]))/1000,
+      transp:typeof r[iTransp]==='number'?r[iTransp]:pn(r[iTransp]),
     });
     existingKeys.add(key);
   }
   STATE.desc=[...STATE.desc,...newRows];
+  console.log('[Descargas] Total processado:',STATE.desc.length,'| Novos:',newRows.length);
+  // Log distribuição por dia para debug
+  const byDay={};newRows.forEach(r=>{byDay[r.dt]=(byDay[r.dt]||0)+1;});
+  console.log('[Descargas] Por data:',byDay);
   return newRows;
 }
 
 async function processTransLocal(buf){
   setLtxt('Lendo Trânsito...');
-  const allRows=parseXL(buf,1);
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  // raw:true garante datas como Date objects
+  const allRows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:true,range:1});
+  console.log('[Trânsito] Colunas:',allRows.length>0?Object.keys(allRows[0]):[]);
   const CODS=[CLI_T,CLI_U,CLI_C];
   const existingKeys=new Set(STATE.trans.map(r=>r._key));
   const newRows=[];
+
+  function rawToDate(v){
+    if(!v)return null;
+    if(v instanceof Date)return isNaN(v)?null:v;
+    if(typeof v==='number'&&v>40000){const e=new Date(1899,11,30);return new Date(e.getTime()+v*86400000);}
+    if(typeof v==='string'&&v.trim())return toDate(v);
+    return null;
+  }
+
   for(const r of allRows){
-    // Only in-transit = no Data Saída
-    if(toDate(r['Data Saída']))continue;
+    // Apenas em trânsito = sem Data Saída
+    if(rawToDate(r['Data Saída']))continue;
     const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
-    const emDt=toDate(r['Dt. Emissão']);if(!emDt)continue;
+    const emDt=rawToDate(r['Dt. Emissão']);if(!emDt)continue;
     const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dateToStr(emDt);
     if(existingKeys.has(key))continue;
     newRows.push({
       _key:key,nrnota:String(r['Nº Nota']||''),
       emissao:dateToStr(emDt),
       cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
-      pesoLiq:pn(r['Peso Líquido'])/1000,transp:pn(r['Transportador']),
+      pesoLiq:pn(r['Peso Líquido'])/1000,transp:typeof r['Transportador']==='number'?r['Transportador']:pn(r['Transportador']),
     });
     existingKeys.add(key);
   }
   STATE.trans=[...STATE.trans,...newRows];
+  console.log('[Trânsito] Total:',STATE.trans.length,'| Novos:',newRows.length);
   return newRows;
 }
 
