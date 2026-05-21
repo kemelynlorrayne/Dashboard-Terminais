@@ -399,17 +399,29 @@ async function loadFB(){
 
 async function saveFB(col,docs,keyFn){
   if(!DB||!docs.length)return;
-  const{doc,setDoc}=FBFNS;
-  const BS=20; // smaller batches to avoid Firebase rate limits
-  for(let i=0;i<docs.length;i+=BS){
-    const batch=docs.slice(i,i+BS);
-    // Sequential writes within batch to avoid rate limiting
-    for(const d of batch){
-      try{await setDoc(doc(DB,col,keyFn(d)),d,{merge:true});}
-      catch(e){console.warn(`${col} write failed:`,e.code||e.message);}
+  const{doc,writeBatch}=FBFNS;
+  const BATCH_SIZE=499;
+  let saved=0;
+  for(let i=0;i<docs.length;i+=BATCH_SIZE){
+    const chunk=docs.slice(i,i+BATCH_SIZE);
+    const batch=writeBatch(DB);
+    chunk.forEach(d=>{
+      try{batch.set(doc(DB,col,keyFn(d)),d,{merge:true});}
+      catch(e){console.warn(`${col} batch.set:`,e.message);}
+    });
+    try{
+      await batch.commit();
+      saved+=chunk.length;
+      setLtxt(`Firebase ${col}... ${saved}/${docs.length}`);
+    }catch(e){
+      console.warn(`${col} batch.commit falhou:`,e.code||e.message);
+      // fallback individual
+      for(const d of chunk){
+        try{await FBFNS.setDoc(doc(DB,col,keyFn(d)),d,{merge:true});}
+        catch(e2){console.warn(`${col} fallback:`,e2.message);}
+      }
     }
-    setLtxt(`Salvando ${col}... ${Math.min(i+BS,docs.length)}/${docs.length}`);
-    await sl(200); // wait 200ms between batches
+    if(i+BATCH_SIZE<docs.length)await sl(80);
   }
 }
 
@@ -504,23 +516,33 @@ async function handleFile(type,inp){
     if(type==='nf')newRows=await processNFLocal(buf);
     else if(type==='desc')newRows=await processDescLocal(buf);
     else if(type==='trans')newRows=await processTransLocal(buf);
-    // Render immediately from local STATE
-    prog.className='upl-prog ok';
-    prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
+
+    // Atualiza dashboard IMEDIATAMENTE — sem esperar Firebase
     updateBadge();renderAll();
     hideLoading();
-    // Save to localStorage cache + Firebase
+
     if(newRows.length){
-      saveLocal(type,STATE[type]); // instant cache
-      prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Salvando no Firebase...';
+      saveLocal(type,STATE[type]); // cache local instantâneo
+      prog.className='upl-prog ok';
+      prog.textContent='✅ '+f.name+' — '+newRows.length+' novos | Sincronizando Firebase em segundo plano...';
       const colMap={nf:'nf',desc:'descargas',trans:'transito'};
+      // Firebase em BACKGROUND — não bloqueia a UI
       saveFB(colMap[type],newRows,r=>r._key).then(()=>{
-        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos!';
-      }).catch(e=>console.warn('Firebase:',e));
+        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos no Firebase!';
+      }).catch(e=>{
+        prog.textContent='✅ '+f.name+' — '+newRows.length+' salvos localmente (Firebase com erro)';
+        console.warn('Firebase background save:',e);
+      });
     } else {
-      prog.textContent='✅ '+f.name+' — nenhum registro novo.';
+      prog.className='upl-prog ok';
+      prog.textContent='✅ '+f.name+' — nenhum registro novo (já importado).';
     }
-  }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);hideLoading();}
+  }catch(e){
+    prog.className='upl-prog err';
+    prog.textContent='❌ Erro: '+e.message;
+    console.error(e);
+    hideLoading();
+  }
 }
 
 async function processNFLocal(buf){
