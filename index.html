@@ -422,7 +422,10 @@ async function saveEstFB(key,data){
 function parseXL(buf,hdr=1){
   const wb=XLSX.read(buf,{type:'array',cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:false,range:hdr});
+  const rows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:false,range:hdr});
+  // Debug: logar nomes das colunas na primeira importação
+  if(rows.length>0)console.log('[parseXL] Colunas detectadas:',Object.keys(rows[0]));
+  return rows;
 }
 
 function parseStockBuf(buf){
@@ -457,7 +460,26 @@ function pn(v){
   return parseFloat(s)||0;
 }
 function fmt(v,d=0){if(v===null||v===undefined||isNaN(v)||!isFinite(v))return'-';return v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});}
-function toDate(v){if(!v)return null;if(v instanceof Date)return isNaN(v)?null:v;const d=new Date(v);return isNaN(d)?null:d;}
+function toDate(v){
+  if(!v)return null;
+  if(v instanceof Date)return isNaN(v)?null:v;
+  // Se for string no formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH...), parsear como local para evitar bug de fuso
+  if(typeof v==='string'){
+    const m=v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+    // Formato DD/MM/YYYY
+    const m2=v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m2)return new Date(+m2[3],+m2[2]-1,+m2[1]);
+  }
+  const d=new Date(v);return isNaN(d)?null:d;
+}
+function dateToStr(dt){
+  // Formatar como YYYY-MM-DD usando hora local (evita UTC shift)
+  const y=dt.getFullYear();
+  const m=String(dt.getMonth()+1).padStart(2,'0');
+  const d=String(dt.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+d;
+}
 function addDays(dt,n){const d=new Date(dt);d.setDate(d.getDate()+n);return d;}
 function diffDays(a,b){
   const da=new Date(a.getFullYear(),a.getMonth(),a.getDate());
@@ -516,11 +538,11 @@ async function processNFLocal(buf){
       if(!DEPS.includes(dep))continue;
       const dt=toDate(r['Data Hora Saida']);if(!dt)continue;
       // Key: NF + dep + data (unique per note per terminal per day)
-      const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+dep+'|'+dt.toISOString().substring(0,10);
+      const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+dep+'|'+dateToStr(dt);
       if(existingKeys.has(key))continue;
       newRows.push({
         _key:key,nrnf:String(r['Nr. NF']||''),
-        dt:dt.toISOString().substring(0,10),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
+        dt:dateToStr(dt),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
         dep,gef:String(r['GEF']||'').trim(),
         codCliente:pn(r['Cód. Cliente']),nomeCliente:String(r['Nome Cliente']||'').trim(),
         codTransp:pn(r['Código Transportadora']),rotina:pn(r['Cód. Rotina']),
@@ -541,19 +563,35 @@ async function processDescLocal(buf){
   const CODS=[CLI_T,CLI_U,CLI_C];
   const existingKeys=new Set(STATE.desc.map(r=>r._key));
   const newRows=[];
+  // Detectar nome real da coluna G (índice 6) — pode variar conforme o arquivo
+  let colG=null;
+  if(allRows.length>0){
+    const keys=Object.keys(allRows[0]);
+    // Tentar pelo nome exato primeiro, depois pela posição (índice 6)
+    const candidates=['G','g','Coluna G'];
+    colG=candidates.find(c=>keys.includes(c));
+    if(!colG){
+      // Fallback: usar a 7ª coluna (índice 6) seja qual for o nome
+      colG=keys[6]||null;
+    }
+  }
   for(const r of allRows){
-    // Skip blank rows (mesclagem): G column must have value
-    if(!r['G']&&r['G']!==0)continue;
+    // Skip blank rows (mesclagem): coluna G (índice 6) deve ter valor
+    if(colG&&r[colG]===null&&r[colG]!==0)continue;
+    if(!colG){
+      // sem coluna G identificada, não filtrar por ela
+    }
     const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
     const dt=toDate(r['Data Saída']);if(!dt)continue;
-    // Key: Nº Nota + Cliente + data
-    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dt.toISOString().substring(0,10);
+    // Key: Nº Nota + Cliente + data + peso (garante unicidade mesmo com NF duplicada)
+    const peso=pn(r['Peso Destino']);
+    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dateToStr(dt)+'|'+Math.round(peso);
     if(existingKeys.has(key))continue;
     newRows.push({
       _key:key,nrnota:String(r['Nº Nota']||''),
-      dt:dt.toISOString().substring(0,10),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
+      dt:dateToStr(dt),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
       cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
-      pesoDestino:pn(r['Peso Destino'])/1000,pesoLiq:pn(r['Peso Líquido'])/1000,
+      pesoDestino:peso/1000,pesoLiq:pn(r['Peso Líquido'])/1000,
       quebra:pn(r['Quebra'])/1000,transp:pn(r['Transportador']),
     });
     existingKeys.add(key);
@@ -573,11 +611,11 @@ async function processTransLocal(buf){
     if(toDate(r['Data Saída']))continue;
     const cod=pn(r['Cliente']);if(!CODS.includes(cod))continue;
     const emDt=toDate(r['Dt. Emissão']);if(!emDt)continue;
-    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+emDt.toISOString().substring(0,10);
+    const key=String(Math.round(pn(r['Nº Nota']))||'')+'|'+cod+'|'+dateToStr(emDt);
     if(existingKeys.has(key))continue;
     newRows.push({
       _key:key,nrnota:String(r['Nº Nota']||''),
-      emissao:emDt.toISOString().substring(0,10),
+      emissao:dateToStr(emDt),
       cliente:cod,gefF:String(r['F']||'').trim().replace('.0',''),
       pesoLiq:pn(r['Peso Líquido'])/1000,transp:pn(r['Transportador']),
     });
@@ -782,7 +820,10 @@ function getMonthData(){
   // Estoque: latest hid and ani for this month
   const estKeys=Object.keys(STATE.est).filter(k=>{
     const[dtStr]=k.split('_');
-    const dt=new Date(dtStr+'T00:00:00');
+    // Parsear como data local (sem shift de fuso)
+    const parts=dtStr.split('-');
+    if(parts.length!==3)return false;
+    const dt=new Date(+parts[0],+parts[1]-1,+parts[2]);
     return dt.getFullYear()===year&&dt.getMonth()+1===month;
   });
   const latestHidKey=estKeys.filter(k=>k.endsWith('_hid')).sort().pop();
