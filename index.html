@@ -827,53 +827,62 @@ async function processEstoque(buf,prod,dtStr){
 }
 
 // ===================== CLEAR =====================
+
+// Deleta coleção inteira usando writeBatch (499 por vez) — não trava
+async function deleteFBCollection(col,filterFn=null){
+  if(!DB)return;
+  const{collection,getDocs,doc,writeBatch}=FBFNS;
+  try{
+    setLtxt('Buscando '+col+'...');
+    const snap=await getDocs(collection(DB,col));
+    const toDelete=filterFn?snap.docs.filter(filterFn):snap.docs;
+    if(!toDelete.length)return;
+    const BATCH_SIZE=499;
+    for(let i=0;i<toDelete.length;i+=BATCH_SIZE){
+      const chunk=toDelete.slice(i,i+BATCH_SIZE);
+      const batch=writeBatch(DB);
+      chunk.forEach(d=>batch.delete(doc(DB,col,d.id)));
+      setLtxt(`Limpando ${col}... ${Math.min(i+BATCH_SIZE,toDelete.length)}/${toDelete.length}`);
+      await batch.commit();
+    }
+  }catch(e){console.warn('deleteFBCollection:',e);}
+}
+
 async function clearData(type){
   if(!confirm('Limpar dados de '+type+'?'))return;
-  showLoading('Limpando...');
-  // Clear localStorage + Firebase for nf/desc/trans
+  showLoading('Limpando '+type+'...');
   if(type==='nf'){
     STATE.nf=[];clearLocal('nf');
-    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'nf'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'nf',d.id))));}catch(e){}}
+    await deleteFBCollection('nf');
   }
   else if(type==='desc'){
     STATE.desc=[];clearLocal('desc');
-    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'descargas'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'descargas',d.id))));}catch(e){}}
+    await deleteFBCollection('descargas');
   }
   else if(type==='trans'){
     STATE.trans=[];clearLocal('trans');
-    if(DB){const{collection,getDocs,deleteDoc,doc}=FBFNS;try{const s=await getDocs(collection(DB,'transito'));await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,'transito',d.id))));}catch(e){}}
+    await deleteFBCollection('transito');
   }
-  // Clear Firebase for estoque
-  if(type==='est-hid'||type==='est-ani'){
-    Object.keys(STATE.est).filter(k=>k.endsWith('_'+( type==='est-hid'?'hid':'ani'))).forEach(k=>delete STATE.est[k]);
-    if(DB){
-      const{collection,getDocs,deleteDoc,doc}=FBFNS;
-      try{
-        const snap=await getDocs(collection(DB,'estoque'));
-        const suffix=type==='est-hid'?'_hid':'_ani';
-        await Promise.allSettled(snap.docs.filter(d=>d.id.endsWith(suffix)).map(d=>deleteDoc(doc(DB,'estoque',d.id))));
-      }catch(e){console.error(e);}
-    }
+  else if(type==='est-hid'||type==='est-ani'){
+    const suffix=type==='est-hid'?'_hid':'_ani';
+    Object.keys(STATE.est).filter(k=>k.endsWith(suffix)).forEach(k=>delete STATE.est[k]);
+    await deleteFBCollection('estoque',d=>d.id.endsWith(suffix));
   }
   const progMap={'nf':'prog-nf','desc':'prog-desc','trans':'prog-trans','est-hid':'prog-hid','est-ani':'prog-ani'};
-  const pEl=document.getElementById(progMap[type]);if(pEl){pEl.className='upl-prog';pEl.textContent='';}
+  const pEl=document.getElementById(progMap[type]);
+  if(pEl){pEl.className='upl-prog';pEl.textContent='';}
   hideLoading();renderAll();
 }
 
 async function clearAll(){
-  if(!confirm('Limpar TODOS os dados?'))return;
+  if(!confirm('Limpar TODOS os dados? Essa ação não pode ser desfeita.'))return;
   showLoading('Limpando tudo...');
+  // Local imediato
   ['nf','desc','trans'].forEach(k=>{STATE[k]=[];clearLocal(k);});
   STATE.est={};
-  if(DB){
-    const{collection,getDocs,deleteDoc,doc}=FBFNS;
-    for(const col of['nf','descargas','transito','estoque']){
-      try{
-        setLtxt('Limpando '+col+'...');
-        const s=await getDocs(collection(DB,col));
-        await Promise.allSettled(s.docs.map(d=>deleteDoc(doc(DB,col,d.id))));
-      }catch(e){console.error(e);}
-    }
+  // Firebase em sequência com batch
+  for(const col of['nf','descargas','transito','estoque']){
+    await deleteFBCollection(col);
   }
   ['prog-nf','prog-desc','prog-trans','prog-hid','prog-ani'].forEach(id=>{
     const el=document.getElementById(id);if(el){el.className='upl-prog';el.textContent='';}
