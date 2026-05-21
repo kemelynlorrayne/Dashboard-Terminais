@@ -775,29 +775,29 @@ async function handleStockFile(inp,prod){
   const buf=await inp.files[0].arrayBuffer();
   const prog=document.getElementById('prog-'+p);
   try{
-    await processEstoque(buf,p,dt);
+    // Processa localmente (rápido)
+    const{key,data}=processEstoqueLocal(buf,p,dt);
+    STATE.est[key]=data;
     prog.className='upl-prog ok';
     prog.textContent='✅ Estoque '+p.toUpperCase()+' '+dt+' importado!';
     updateBadge();renderAll();
-  }catch(e){prog.className='upl-prog err';prog.textContent='❌ Erro: '+e.message;console.error(e);}
-  stockPendente=null;hideLoading();
+    hideLoading();
+    // Salva Firebase em background — não bloqueia
+    saveEstFB(key,data).catch(e=>console.warn('Estoque Firebase:',e));
+  }catch(e){
+    prog.className='upl-prog err';
+    prog.textContent='❌ Erro: '+e.message;
+    console.error(e);
+    hideLoading();
+  }
+  stockPendente=null;
 }
 
-async function processEstoque(buf,prod,dtStr){
+function processEstoqueLocal(buf,prod,dtStr){
   const{rows,gefIdx,antIdx,atualIdx}=parseStockBuf(buf);
   const GEF_ULTRA=['1 / 1 / 1','1 / 1 / 3'];
-  
-  function getDepVal(r){
-    const v=r[1]; // always column index 1
-    if(v==null)return 0;
-    if(typeof v==='number')return v;
-    return parseFloat(String(v).replace(',','.').replace(/[^0-9.]/g,''))||0;
-  }
-  function getVal(r,idx){
-    const v=r[idx];if(v==null||v==='')return 0;
-    if(typeof v==='number')return v/1000;
-    return pn(v)/1000;
-  }
+  function getDepVal(r){const v=r[1];if(v==null)return 0;if(typeof v==='number')return v;return parseFloat(String(v).replace(',','.').replace(/[^0-9.]/g,''))||0;}
+  function getVal(r,idx){const v=r[idx];if(v==null||v==='')return 0;if(typeof v==='number')return v/1000;return pn(v)/1000;}
   function sumRows(depList,gefFilter=null){
     return rows.filter(r=>{
       const dep=getDepVal(r);
@@ -806,7 +806,6 @@ async function processEstoque(buf,prod,dtStr){
       return true;
     });
   }
-
   const data={prod,dt:dtStr};
   if(prod==='hid'){
     const tR=sumRows([17]),uR=sumRows([0.34,0.35],GEF_ULTRA),cR=sumRows([0.07,0.21]);
@@ -821,9 +820,7 @@ async function processEstoque(buf,prod,dtStr){
     data.teciap_ani_ab=tR.reduce((s,r)=>s+getVal(r,antIdx),0);
     data.teciap_ani_fe=tR.reduce((s,r)=>s+getVal(r,atualIdx),0);
   }
-  const key=dtStr+'_'+prod;
-  STATE.est[key]=data;
-  await saveEstFB(key,data);
+  return{key:dtStr+'_'+prod,data};
 }
 
 // ===================== CLEAR =====================
