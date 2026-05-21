@@ -528,32 +528,56 @@ async function processNFLocal(buf){
   const ws=wb.Sheets[wb.SheetNames[0]];
   // raw:true garante datas como Date objects (não strings)
   const allRows=XLSX.utils.sheet_to_json(ws,{header:0,defval:null,raw:true,range:1});
-  console.log('[NF] Colunas:',allRows.length>0?Object.keys(allRows[0]):[]);
-  const DEPS=[DEP_T,DEP_U,DEP_C];
+  console.log('[NF] Colunas detectadas:',allRows.length>0?Object.keys(allRows[0]).slice(0,10):[]);
+
+  // LÓGICA DO ARQUIVO (confirmada inspecionando estrutura real):
+  // - Expedição (carregamento saindo do terminal → ferrovia/usina/rodo):
+  //     Depósito Saída = 'TECIAP', 'ULTRACARGO RONDON', 'CENTROESTE'
+  //     Código Transportadora = 3616 (RUMO) → ferrovia
+  //     Cód. Cliente = clientes usina (11966 Logum, 7605 Term.Paulínia, 3492 Tercom, etc.)
+  // - Recebimento (NF de entrada no terminal, caminhões):
+  //     Cód. Cliente = 3490 (TECIAP), 83868 (Ultracargo), 23184 (Centroeste)
+  //     Depósito Saída = tanques físicos (TK1027 A, TK527 A, etc.)
+  // Salvamos AMBOS os tipos, diferenciados pelo campo 'tipo'
+
+  const DEPS_EXP=[DEP_T,DEP_U,DEP_C]; // depósitos de saída (expedição)
+  const CLIS_REC=[CLI_T,CLI_U,CLI_C];  // clientes de recebimento
   const existingKeys=new Set(STATE.nf.map(r=>r._key));
   const newRows=[];
   const CHUNK=500;
+
   for(let i=0;i<allRows.length;i+=CHUNK){
     const chunk=allRows.slice(i,i+CHUNK);
     for(const r of chunk){
       const dep=String(r['Depósito Saída']||'').trim();
-      if(!DEPS.includes(dep))continue;
-      // Data como Date object (raw:true) ou serial Excel
+      const codCli=pn(r['Cód. Cliente']);
+      // Aceitar se: é expedição (dep = terminal) OU recebimento (cliente = terminal)
+      const isExpedicao=DEPS_EXP.includes(dep);
+      const isRecebimento=CLIS_REC.includes(codCli);
+      if(!isExpedicao&&!isRecebimento)continue;
+
       let dt=null;
       const rawDt=r['Data Hora Saida'];
       if(rawDt instanceof Date){dt=rawDt;}
       else if(typeof rawDt==='number'&&rawDt>40000){const e=new Date(1899,11,30);dt=new Date(e.getTime()+rawDt*86400000);}
       else if(typeof rawDt==='string'&&rawDt.trim()){dt=toDate(rawDt);}
       if(!dt||isNaN(dt))continue;
-      const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+dep+'|'+dateToStr(dt);
+
+      // Depósito normalizado: para recebimento usa o cód. cliente como referência de terminal
+      const depNorm=isExpedicao?dep:(codCli===CLI_T?DEP_T:codCli===CLI_U?DEP_U:DEP_C);
+
+      const key=String(Math.round(pn(r['Nr. NF']))||'')+'|'+depNorm+'|'+dateToStr(dt)+'|'+(isExpedicao?'exp':'rec');
       if(existingKeys.has(key))continue;
       newRows.push({
         _key:key,nrnf:String(r['Nr. NF']||''),
         dt:dateToStr(dt),mes:dt.getMonth()+1,ano:dt.getFullYear(),dia:dt.getDate(),
-        dep,gef:String(r['GEF']||'').trim(),
-        codCliente:pn(r['Cód. Cliente']),nomeCliente:String(r['Nome Cliente']||'').trim(),
+        dep:depNorm,           // terminal normalizado: TECIAP / ULTRACARGO RONDON / CENTROESTE
+        depOrig:dep,           // depósito original do arquivo
+        tipo:isExpedicao?'exp':'rec', // exp=expedição saindo, rec=recebimento chegando
+        gef:String(r['GEF']||'').trim(),
+        codCliente:codCli,nomeCliente:String(r['Nome Cliente']||'').trim(),
         codTransp:pn(r['Código Transportadora']),rotina:pn(r['Cód. Rotina']),
-        qtde:pn(r['Qtde'])/1000,descItem:String(r['Descrição Item']||'').trim(),
+        qtde:pn(r['Qtde'])/1000,
       });
       existingKeys.add(key);
     }
@@ -561,7 +585,15 @@ async function processNFLocal(buf){
     await sl(10);
   }
   STATE.nf=[...STATE.nf,...newRows];
-  console.log('[NF] Total:',STATE.nf.length,'| Novos:',newRows.length);
+  // Log de debug por tipo e data
+  const byTipo={exp:0,rec:0};
+  const byDia={};
+  newRows.forEach(r=>{
+    byTipo[r.tipo]=(byTipo[r.tipo]||0)+1;
+    byDia[r.dt]=(byDia[r.dt]||0)+1;
+  });
+  console.log('[NF] Total:',STATE.nf.length,'| Novos:',newRows.length,'| Por tipo:',byTipo);
+  console.log('[NF] Por data:',byDia);
   return newRows;
 }
 
@@ -933,30 +965,35 @@ function getMonthData(){
   const FERRO_CLIS=[11966,7605,3492];
   const transFerro=trans.filter(r=>r.transp===13746&&FERRO_CLIS.includes(r.cliente)).reduce((s,r)=>s+r.pesoLiq,0);
 
-  // NF
+  // NF — expedição (saindo do terminal): tipo='exp', dep=terminal
+  // NF — recebimento/usina (chegando ao terminal via caminhão): tipo='rec', codCliente=terminal
+  const nfExp=nf.filter(r=>r.tipo==='exp'||!r.tipo); // retrocompat: registros antigos sem tipo
+  const nfRec=nf.filter(r=>r.tipo==='rec');
+
   function nfByDay(dep,transpCod=null){
     const m={};
-    nf.filter(r=>r.dep===dep&&(transpCod===null||r.codTransp===transpCod)).forEach(r=>{m[r.dia]=(m[r.dia]||0)+r.qtde;});
+    nfExp.filter(r=>r.dep===dep&&(transpCod===null||r.codTransp===transpCod)).forEach(r=>{m[r.dia]=(m[r.dia]||0)+r.qtde;});
     return m;
   }
   function nfTotal(dep,transpCod=null){return Object.values(nfByDay(dep,transpCod)).reduce((a,b)=>a+b,0);}
   function nfByClient(){
     const m={};
-    nf.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
+    nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
       const c=r.nomeCliente;if(!m[c])m[c]={cod:r.codCliente,byDay:{}};
       m[c].byDay[r.dia]=(m[c].byDay[r.dia]||0)+r.qtde;
     });
     return m;
   }
 
-  // Carregamento Usina — NF by Cód.Cliente + GEF (1-1-1=Sinop, 1-1-3=Mutum)
-  function usinaReal(codCli){
+  // Carregamento Usina — NFs chegando ao terminal (tipo='rec'), por Cód.Cliente do terminal + GEF
+  function usinaReal(termCod){
     const m={};
-    nf.filter(r=>r.codCliente===codCli).forEach(r=>{
+    // Usar nfRec: codCliente = código do terminal (3490=TECIAP, 83868=Ultra, 23184=Centro)
+    nfRec.filter(r=>r.codCliente===termCod).forEach(r=>{
       if(!m[r.dia])m[r.dia]={s:0,mu:0};
       if(r.gef==='1-1-1')m[r.dia].s+=r.qtde;
       else if(r.gef==='1-1-3')m[r.dia].mu+=r.qtde;
-      else m[r.dia].s+=r.qtde; // other GEFs go to sinop
+      else m[r.dia].s+=r.qtde;
     });
     return m;
   }
@@ -974,9 +1011,9 @@ function getMonthData(){
     return{sinop,mutum};
   }
 
-  // Ferrovia
+  // Ferrovia — carregamento: NFs expedição de TECIAP/ULTRA com transportadora RUMO (3616)
   const ferroCarrBD={};
-  nf.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{ferroCarrBD[r.dia]=(ferroCarrBD[r.dia]||0)+r.qtde;});
+  nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{ferroCarrBD[r.dia]=(ferroCarrBD[r.dia]||0)+r.qtde;});
   const ferroDescBD={};
   desc.filter(r=>r.transp===13746).forEach(r=>{ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;});
   const ferroTotal=Object.values(ferroCarrBD).reduce((a,b)=>a+b,0);
