@@ -866,44 +866,44 @@ async function deleteFBCollection(col,filterFn=null){
 
 async function clearData(type){
   if(!confirm('Limpar dados de '+type+'?'))return;
-  showLoading('Limpando '+type+'...');
-  if(type==='nf'){
-    STATE.nf=[];clearLocal('nf');
-    await deleteFBCollection('nf');
-  }
-  else if(type==='desc'){
-    STATE.desc=[];clearLocal('desc');
-    await deleteFBCollection('descargas');
-  }
-  else if(type==='trans'){
-    STATE.trans=[];clearLocal('trans');
-    await deleteFBCollection('transito');
-  }
+  // 1. Limpa local IMEDIATAMENTE
+  if(type==='nf'){STATE.nf=[];clearLocal('nf');}
+  else if(type==='desc'){STATE.desc=[];clearLocal('desc');}
+  else if(type==='trans'){STATE.trans=[];clearLocal('trans');}
   else if(type==='est-hid'||type==='est-ani'){
     const suffix=type==='est-hid'?'_hid':'_ani';
     Object.keys(STATE.est).filter(k=>k.endsWith(suffix)).forEach(k=>delete STATE.est[k]);
-    await deleteFBCollection('estoque',d=>d.id.endsWith(suffix));
   }
   const progMap={'nf':'prog-nf','desc':'prog-desc','trans':'prog-trans','est-hid':'prog-hid','est-ani':'prog-ani'};
   const pEl=document.getElementById(progMap[type]);
   if(pEl){pEl.className='upl-prog';pEl.textContent='';}
-  hideLoading();renderAll();
+  renderAll(); // atualiza dashboard imediatamente
+
+  // 2. Firebase em background — sem travar UI
+  const colMap={'nf':'nf','desc':'descargas','trans':'transito'};
+  if(colMap[type]){
+    deleteFBCollection(colMap[type]).catch(e=>console.warn('Clear FB:',e));
+  } else if(type==='est-hid'||type==='est-ani'){
+    const suffix=type==='est-hid'?'_hid':'_ani';
+    deleteFBCollection('estoque',d=>d.id.endsWith(suffix)).catch(e=>console.warn('Clear estoque FB:',e));
+  }
 }
 
 async function clearAll(){
   if(!confirm('Limpar TODOS os dados? Essa ação não pode ser desfeita.'))return;
-  showLoading('Limpando tudo...');
-  // Local imediato
+  // 1. Limpa tudo local IMEDIATAMENTE
   ['nf','desc','trans'].forEach(k=>{STATE[k]=[];clearLocal(k);});
   STATE.est={};
-  // Firebase em sequência com batch
-  for(const col of['nf','descargas','transito','estoque']){
-    await deleteFBCollection(col);
-  }
   ['prog-nf','prog-desc','prog-trans','prog-hid','prog-ani'].forEach(id=>{
     const el=document.getElementById(id);if(el){el.className='upl-prog';el.textContent='';}
   });
-  hideLoading();renderAll();
+  renderAll(); // atualiza imediatamente
+
+  // 2. Firebase em background
+  showLoading('Limpando Firebase em segundo plano...');
+  Promise.all(['nf','descargas','transito','estoque'].map(col=>deleteFBCollection(col)))
+    .then(()=>{hideLoading();setLtxt('Firebase limpo!');})
+    .catch(e=>{hideLoading();console.warn('clearAll FB:',e);});
 }
 
 // ===================== CONFIG =====================
