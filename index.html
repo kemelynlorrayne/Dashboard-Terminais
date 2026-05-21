@@ -52,6 +52,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .sec{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.6px;margin:20px 0 8px}
 .chart-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;margin-bottom:14px}
 .chart-wrap{position:relative;height:180px}
+.chart-wrap-vt{position:relative;height:180px;padding-bottom:20px;overflow:visible}
 .t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
 .tcard{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
 .tcard-head{background:var(--sur);padding:8px 12px;font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr)}
@@ -178,7 +179,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   <div id="term-teciap" class="term-content">
     <div class="kpi-grid" id="kpi-teciap"></div>
     <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-td"></canvas></div></div>
-    <div class="sec">Carregamentos — Rodo / Ferro / Transf</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-tc"></canvas></div></div>
+    <div class="sec">Carregamentos — Rodo / Ferro / Transf</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-tc"></canvas></div></div>
     <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-te"></canvas></div></div>
     <div class="sec">Carregamento Usina</div><div class="t3" id="usina-teciap"></div>
     <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-teciap"></div>
@@ -186,7 +187,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   <div id="term-ultra" class="term-content" style="display:none">
     <div class="kpi-grid" id="kpi-ultra"></div>
     <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ud"></canvas></div></div>
-    <div class="sec">Carregamentos — Ferro</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-uc"></canvas></div></div>
+    <div class="sec">Carregamentos — Ferro</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-uc"></canvas></div></div>
     <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ue"></canvas></div></div>
     <div class="sec">Carregamento Usina</div><div class="t3" id="usina-ultra"></div>
     <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-ultra"></div>
@@ -194,7 +195,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   <div id="term-centro" class="term-content" style="display:none">
     <div class="kpi-grid" id="kpi-centro"></div>
     <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cd"></canvas></div></div>
-    <div class="sec">Carregamento VT</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cc"></canvas></div></div>
+    <div class="sec">Carregamento VT</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-cc"></canvas></div></div>
     <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ce"></canvas></div></div>
     <div class="sec">Carregamento Usina</div><div class="t3" id="usina-centro"></div>
     <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-centro"></div>
@@ -204,9 +205,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <!-- FERROVIA -->
 <div id="page-ferrovia" class="page" style="padding:20px">
   <div class="kpi-grid" id="kpi-ferro"></div>
-  <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fc"></canvas></div></div>
-  <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fd"></canvas></div></div>
-  <div class="ferro-filter" id="ferro-filter"></div>
+  <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fc"></canvas></div></div>
+  <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fd"></canvas></div></div>
+  <div id="ferro-filter" style="display:none"></div>
   <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
 </div>
 
@@ -1027,8 +1028,27 @@ function getMonthData(){
   // Ferrovia — carregamento: NFs expedição de TECIAP/ULTRA com transportadora RUMO (3616)
   const ferroCarrBD={};
   nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{ferroCarrBD[r.dia]=(ferroCarrBD[r.dia]||0)+r.qtde;});
+
+  // Ferrovia — descarga: descargas com transportador RUMO (13746) para clientes ferroviários
+  // Clientes: 11966 (Logum), 7605 (Terminal Paulínia), 3492 (Tercom) + qualquer outro com transp=13746
   const ferroDescBD={};
-  desc.filter(r=>r.transp===13746).forEach(r=>{ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;});
+  const ferroDescByCli={};  // {nomeCliente: {byDay: {dia: vol}}}
+  desc.filter(r=>r.transp===13746).forEach(r=>{
+    ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;
+  });
+
+  // Carregamento por cliente destino (NF exp com RUMO) — dinâmico, sem lista fixa
+  function nfByClient(){
+    const m={};
+    nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
+      // Nome curto: primeira palavra significativa
+      const nomeCurto=r.nomeCliente.split(' ').slice(0,2).join(' ');
+      if(!m[nomeCurto])m[nomeCurto]={cod:r.codCliente,byDay:{}};
+      m[nomeCurto].byDay[r.dia]=(m[nomeCurto].byDay[r.dia]||0)+r.qtde;
+    });
+    return m;
+  }
+
   const ferroTotal=Object.values(ferroCarrBD).reduce((a,b)=>a+b,0);
   const ferroDescTotal=Object.values(ferroDescBD).reduce((a,b)=>a+b,0);
   const ferroDays=Math.max(1,Object.values(ferroCarrBD).filter(v=>v>0).length);
@@ -1096,9 +1116,81 @@ function mkC(id,labels,data,color){
   CH[id]=new Chart(el,{type:'bar',
     data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(255,255,255,.03)'),borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}}},
-      scales:{x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
-              y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}},
+      },
+      scales:{
+        x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      }
+    },
+    plugins:[{
+      id:'topLabels',
+      afterDatasetsDraw(chart){
+        const{ctx,data,scales:{x,y}}=chart;
+        ctx.save();
+        ctx.font='bold 9px Inter,sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        data.datasets[0].data.forEach((v,i)=>{
+          if(!v||v<=0)return;
+          const xPos=x.getPixelForValue(i);
+          const yPos=y.getPixelForValue(v);
+          ctx.fillStyle='#8b93b0';
+          const lbl=v>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
+          ctx.fillText(lbl,xPos,yPos-2);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// Gráfico de Carregamento VT: volume (m³) em cima, VTs embaixo
+function mkCVT(id,labels,data,color,vagaoM3=98){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const el=document.getElementById(id);if(!el)return;
+  CH[id]=new Chart(el,{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(255,255,255,.03)'),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:22,bottom:18}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const v=c.parsed.y;return[fmt(v,0)+' m³','VTs: '+Math.round(v/vagaoM3)];}}},
+      },
+      scales:{
+        x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      }
+    },
+    plugins:[{
+      id:'vtLabels',
+      afterDatasetsDraw(chart){
+        const{ctx,data,scales:{x,y},chartArea:{bottom}}=chart;
+        ctx.save();
+        data.datasets[0].data.forEach((v,i)=>{
+          if(!v||v<=0)return;
+          const xPos=x.getPixelForValue(i);
+          const yPos=y.getPixelForValue(v);
+          // Volume em cima da barra
+          ctx.font='bold 9px Inter,sans-serif';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillStyle='#8b93b0';
+          const volLbl=v>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
+          ctx.fillText(volLbl,xPos,yPos-2);
+          // VTs abaixo do eixo X
+          ctx.font='9px Inter,sans-serif';
+          ctx.textBaseline='top';
+          ctx.fillStyle='#4f8ef7';
+          ctx.fillText(Math.round(v/vagaoM3),xPos,bottom+3);
+        });
+        ctx.restore();
+      }
+    }]
+  });
 }
 function lbls(D){return Array.from({length:D.dias_mes},(_,i)=>(i+1)+'/'+D.month);}
 function bda(bd,D){return Array.from({length:D.dias_mes},(_,i)=>bd[i+1]||0);}
@@ -1195,7 +1287,7 @@ function renderTerminal(D){
     {l:'Giro',v:fmt(D.t.giro,2)}
   ]);
   mkC('ch-td',L,bda(D.t.descBD,D),'#4f8ef7');
-  mkC('ch-tc',L,bda(D.t.carrBD,D),'#22c55e');
+  mkCVT('ch-tc',L,bda(D.t.carrBD,D),'#22c55e');
   mkC('ch-te',L,bda(D.t.estBD,D),'#818cf8');
   rUsina('usina-teciap',D.t.usinaReal,D.t.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-teciap',D.t.quebra);
@@ -1216,7 +1308,7 @@ function renderTerminal(D){
     {l:'Giro',v:fmt(D.u.giro,2)}
   ]);
   mkC('ch-ud',L,bda(D.u.descBD,D),'#4f8ef7');
-  mkC('ch-uc',L,bda(D.u.carrBD,D),'#22c55e');
+  mkCVT('ch-uc',L,bda(D.u.carrBD,D),'#22c55e');
   mkC('ch-ue',L,bda(D.u.estBD,D),'#818cf8');
   rUsina('usina-ultra',D.u.usinaReal,D.u.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-ultra',D.u.quebra);
@@ -1237,7 +1329,7 @@ function renderTerminal(D){
     {l:'Giro',v:fmt(D.c.giro,2)}
   ]);
   mkC('ch-cd',L,bda(D.c.descBD,D),'#4f8ef7');
-  mkC('ch-cc',L,bda(D.c.carrBD,D),'#22c55e');
+  mkCVT('ch-cc',L,bda(D.c.carrBD,D),'#22c55e');
   mkC('ch-ce',L,bda(D.c.estBD,D),'#818cf8');
   rUsina('usina-centro',D.c.usinaReal,D.c.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-centro',D.c.quebra);
@@ -1247,7 +1339,7 @@ function renderFerrovia(D){
   const L=lbls(D);
   rKPI('kpi-ferro',[
     {l:'Vol. Carregado TECIAP/Ultracargo',v:fmt(D.ferro.carrTotal,0)},
-    {l:'Vol. Descarregado Paulínia (m³)',v:fmt(D.ferro.descTotal,0)},
+    {l:'Vol. Descarregado Terminais (m³)',v:fmt(D.ferro.descTotal,0)},
     {l:'Contrato Transporte/Mês (m³)',v:fmt(D.ferro.ct,0)},
     {l:'Saldo Contrato Transporte (m³)',v:fmt(D.ferro.saldoCt,0),c:D.ferro.saldoCt<0?'neg':'pos'},
     {l:'Backlog/dia Carregamento VT (m³)',v:fmt(D.ferro.backlog,0)},
@@ -1259,36 +1351,52 @@ function renderFerrovia(D){
     {l:'Saldo Vol. Mínimo Rumo (m³)',v:fmt(D.ferro.saldoMin,0),c:D.ferro.saldoMin<0?'neg':'pos'},
     {l:'Backlog/dia Mínimo Rumo (m³)',v:fmt(D.ferro.backlogMin,0)}
   ]);
-  mkC('ch-fc',L,bda(D.ferro.carrBD,D),'#4f8ef7');
-  mkC('ch-fd',L,bda(D.ferro.descBD,D),'#22c55e');
-  const clients=Object.keys(D.ferro.byClient);
-  let selClient=window._ferroClient||'all';
-  document.getElementById('ferro-filter').innerHTML=
-    `<button class="ferro-btn ${selClient==='all'?'active':''}" onclick="setFerroClient('all')">🌐 Todos</button>`
-    +clients.map(c=>`<button class="ferro-btn ${selClient===c?'active':''}" onclick="setFerroClient('${c}')">${c.split(' ')[0]}</button>`).join('');
+  mkCVT('ch-fc',L,bda(D.ferro.carrBD,D),'#4f8ef7');
+  mkCVT('ch-fd',L,bda(D.ferro.descBD,D),'#22c55e');
+  // Remover filtro de abas — tabela sempre mostra todos os clientes
+  document.getElementById('ferro-filter').innerHTML='';
   renderFerroTable(D);
 }
-function setFerroClient(c){window._ferroClient=c;renderFerroTable(window._D);}
+
 function renderFerroTable(D){
-  const sel=window._ferroClient||'all';
   const clients=Object.keys(D.ferro.byClient);
-  const show=sel==='all'?clients:[sel];
+  if(!clients.length){
+    document.getElementById('tbl-ferro').innerHTML='<div style="padding:12px;color:var(--txt3);font-size:11px">Sem dados de carregamento no período.</div>';
+    return;
+  }
+
+  // Cabeçalho: Data | [NomeCliente...] | Total
+  // Layout igual ao PDF: nome do cliente em cima, volume abaixo
   let rows='';
+  let hasTot=false;
   for(let d=1;d<=D.dias_mes;d++){
-    const vals=show.map(c=>D.ferro.byClient[c]?.byDay[d]||0);
-    const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)continue;
+    const vals=clients.map(c=>D.ferro.byClient[c]?.byDay[d]||0);
+    const tot=vals.reduce((a,b)=>a+b,0);
+    if(tot===0)continue;
+    hasTot=true;
     rows+=`<tr><td>${String(d).padStart(2,'0')}/${String(D.month).padStart(2,'0')}</td>`;
-    if(sel==='all')vals.forEach(v=>{rows+=`<td>${v>0?fmt(v,0):'-'}</td>`;});
+    vals.forEach(v=>{rows+=`<td>${v>0?fmt(v,0):'-'}</td>`;});
     rows+=`<td>${fmt(tot,0)}</td></tr>`;
   }
-  const tots=show.map(c=>Object.values(D.ferro.byClient[c]?.byDay||{}).reduce((a,b)=>a+b,0));
+
+  const tots=clients.map(c=>Object.values(D.ferro.byClient[c]?.byDay||{}).reduce((a,b)=>a+b,0));
+  const grandTot=tots.reduce((a,b)=>a+b,0);
+
   document.getElementById('tbl-ferro').innerHTML=`<table>
-    <tr><th>Data</th>${sel==='all'?show.map(c=>`<th>${c.split(' ')[0]}</th>`).join(''):''}
-    <th>Total</th></tr>${rows}
-    <tr class="tr-tot"><td>Total</td>${sel==='all'?tots.map(t=>`<td>${fmt(t,0)}</td>`).join(''):''}
-    <td>${fmt(tots.reduce((a,b)=>a+b,0),0)}</td></tr>
+    <tr>
+      <th>Data</th>
+      ${clients.map(c=>`<th>${c}</th>`).join('')}
+      <th>Total</th>
+    </tr>
+    ${rows||'<tr><td colspan="${clients.length+2}" style="text-align:center;color:var(--txt3)">Sem movimentação</td></tr>'}
+    <tr class="tr-tot">
+      <td>Total</td>
+      ${tots.map(t=>`<td>${fmt(t,0)}</td>`).join('')}
+      <td>${fmt(grandTot,0)}</td>
+    </tr>
   </table>`;
 }
+
 
 function renderTOP(D){
   STATE.config.top_fat[D.month-1]=Math.round(D.ferro.carrTotal);
