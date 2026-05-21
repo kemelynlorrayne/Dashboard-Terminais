@@ -916,6 +916,7 @@ function getMonthData(){
   const desc=STATE.desc.filter(r=>r.mes===month&&r.ano===year);
   const nf=STATE.nf.filter(r=>r.mes===month&&r.ano===year);
   const trans=STATE.trans; // always current
+  const DEPS_EXP=[DEP_T,DEP_U,DEP_C];
 
   // Estoque: latest hid and ani for this month
   const estKeys=Object.keys(STATE.est).filter(k=>{
@@ -967,8 +968,20 @@ function getMonthData(){
 
   // NF — expedição (saindo do terminal): tipo='exp', dep=terminal
   // NF — recebimento/usina (chegando ao terminal via caminhão): tipo='rec', codCliente=terminal
-  const nfExp=nf.filter(r=>r.tipo==='exp'||!r.tipo); // retrocompat: registros antigos sem tipo
-  const nfRec=nf.filter(r=>r.tipo==='rec');
+  // Retrocompat: registros antigos sem campo 'tipo' usam dep para deduzir
+  const CLIS_REC_SET=new Set([CLI_T,CLI_U,CLI_C]);
+  const nfExp=nf.filter(r=>{
+    if(r.tipo==='exp')return true;
+    if(r.tipo==='rec')return false;
+    // sem tipo: era código antigo — inferir pelo dep
+    return DEPS_EXP.includes(r.dep);
+  });
+  const nfRec=nf.filter(r=>{
+    if(r.tipo==='rec')return true;
+    if(r.tipo==='exp')return false;
+    // sem tipo: era código antigo — inferir pelo codCliente
+    return CLIS_REC_SET.has(r.codCliente)&&!DEPS_EXP.includes(r.dep);
+  });
 
   function nfByDay(dep,transpCod=null){
     const m={};
