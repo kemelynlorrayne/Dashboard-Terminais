@@ -196,8 +196,16 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- STOCK MODAL -->
 <div class="modal-overlay" id="stockModal">
   <div class="modal">
-    <div class="modal-title" id="stockModalTitle">🏭 Importar Estoque</div>
-    <div class="modal-sub" id="stockModalSub">Informe a data de referência do relatório.</div>
+    <div class="modal-title">🏭 Importar Estoque</div>
+    <div class="modal-sub">Selecione o produto e informe a data do relatório.</div>
+    <div class="modal-field">
+      <label>Produto</label>
+      <select id="stockProduto">
+        <option value="">— Selecione —</option>
+        <option value="hid">💧 Álcool Etílico Hidratado (AEHC)</option>
+        <option value="ani">🌾 Álcool Etílico Anidro (AEAC)</option>
+      </select>
+    </div>
     <div class="modal-field">
       <label>Data do Relatório</label>
       <input type="date" id="stockData">
@@ -365,33 +373,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       </div>
       <div class="upl-card">
         <div class="upl-card-title">④ 🏭 Estoque</div>
-        <div class="upl-card-desc">Selecione o produto e informe a data antes de importar.</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="upl-card-desc">Clique para selecionar o produto (hidratado ou anidro) e informar a data.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
           <button class="upl-clear" onclick="clearData('est-hid')">🗑️ Limpar Hidratado</button>
           <button class="upl-clear" onclick="clearData('est-ani')">🗑️ Limpar Anidro</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">💧 Hidratado (AEHC)</div>
-            <div class="upl-drop" id="drop-hid" onclick="openStockModal('hid',event)">
-              <div class="upl-drop-icon" style="font-size:18px;margin-bottom:4px">💧</div>
-              <div class="upl-drop-text" style="font-size:10px">Clique para selecionar</div>
-              <div class="upl-drop-name">HIDRATADO_DD_MM.CSV</div>
-            </div>
-            <input type="file" accept=".xls,.xlsx,.csv" id="stock-hid-input" style="display:none" onchange="handleStockFile(this,'hid')">
-            <div class="upl-prog" id="prog-hid"></div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🌾 Anidro (AEAC)</div>
-            <div class="upl-drop" id="drop-ani" onclick="openStockModal('ani',event)">
-              <div class="upl-drop-icon" style="font-size:18px;margin-bottom:4px">🌾</div>
-              <div class="upl-drop-text" style="font-size:10px">Clique para selecionar</div>
-              <div class="upl-drop-name">ANIDRO_DD_MM.CSV</div>
-            </div>
-            <input type="file" accept=".xls,.xlsx,.csv" id="stock-ani-input" style="display:none" onchange="handleStockFile(this,'ani')">
-            <div class="upl-prog" id="prog-ani"></div>
-          </div>
+        <div class="upl-drop" onclick="openStockModal(null,event)">
+          <div class="upl-drop-icon">🏭</div>
+          <div class="upl-drop-text">Arraste ou <strong>clique para selecionar</strong></div>
+          <div class="upl-drop-name">HIDRATADO_DD_MM.CSV / ANIDRO_DD_MM.CSV</div>
         </div>
+        <input type="file" accept=".xls,.xlsx,.csv" id="stock-hid-input" style="display:none" onchange="handleStockFile(this,'hid')">
+        <input type="file" accept=".xls,.xlsx,.csv" id="stock-ani-input" style="display:none" onchange="handleStockFile(this,'ani')">
+        <div class="upl-prog" id="prog-hid"></div>
+        <div class="upl-prog" id="prog-ani"></div>
       </div>
     </div>
   </div>
@@ -847,10 +842,8 @@ async function processTransLocal(buf){
 // ===================== STOCK =====================
 function openStockModal(prod,e){
   e.preventDefault();e.stopPropagation();
-  stockPendente={prod,dt:null};
-  const nomes={hid:'💧 Estoque Hidratado (AEHC)',ani:'🌾 Estoque Anidro (AEAC)'};
-  document.getElementById('stockModalTitle').textContent=nomes[prod]||'Importar Estoque';
-  document.getElementById('stockModalSub').textContent='Informe a data de referência do relatório de '+(prod==='hid'?'hidratado':'anidro')+'.';
+  stockPendente={prod:prod||'',dt:null};
+  document.getElementById('stockProduto').value=prod||'';
   document.getElementById('stockData').value='';
   document.getElementById('stockModal').classList.add('show');
 }
