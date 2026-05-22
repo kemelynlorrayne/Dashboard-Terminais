@@ -28,94 +28,95 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0b0d14;--sur:#111420;--sur2:#161929;--sur3:#1c2035;
-  --bdr:#222640;--bdr2:#2a2f50;
-  --txt:#c8cce0;--txt2:#6b728f;--txt3:#3d4460;
-  --acc:#4d7ef5;--acc2:#3a6be0;--acc-l:rgba(77,126,245,.08);
-  --green:#35c97a;--green-l:rgba(53,201,122,.08);
-  --red:#e05c5c;--red-l:rgba(224,92,92,.08);
-  --amber:#d4943a;--amber-l:rgba(212,148,58,.08);
-  --purple:#8b6cf5;
+  --bg:#f0f2f7;--sur:#ffffff;--sur2:#f7f8fc;--sur3:#eef0f6;
+  --bdr:#dde1ed;--bdr2:#c8cedd;
+  --txt:#1a2035;--txt2:#4a5475;--txt3:#8690aa;
+  --acc:#1e4fbd;--acc2:#1640a0;--acc-l:rgba(30,79,189,.07);
+  --acc-h:#e8edf9;
+  --navy:#0f2d6b;--blue-mid:#2d6adf;
+  --green:#1a9e5c;--green-l:rgba(26,158,92,.08);
+  --red:#c0392b;--red-l:rgba(192,57,43,.07);
+  --amber:#c47a1a;--amber-l:rgba(196,122,26,.08);
   --r:6px;--r2:10px;--r3:14px;
-  --nav-w:220px;
 }
 html,body{height:100%}
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
 
 /* ── TOPBAR ── */
-.topbar{background:var(--sur);border-bottom:1px solid var(--bdr);height:52px;display:flex;align-items:center;padding:0 20px;gap:0;position:sticky;top:0;z-index:200;flex-shrink:0}
-.topbar-logo{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt);padding-right:20px;border-right:1px solid var(--bdr);margin-right:4px;white-space:nowrap}
+.topbar{background:var(--navy);height:54px;display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:200;flex-shrink:0;box-shadow:0 2px 8px rgba(15,45,107,.25)}
+.topbar-logo{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#fff;padding-right:20px;border-right:1px solid rgba(255,255,255,.15);margin-right:4px;white-space:nowrap;opacity:.95}
 .topbar-tabs{display:flex;height:100%;gap:0;flex:1}
-.topbar-tab{padding:0 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--txt3);height:100%;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
-.topbar-tab:hover{color:var(--txt2)}
-.topbar-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-.topbar-right{font-size:11px;color:var(--txt3);white-space:nowrap;margin-left:auto}
+.topbar-tab{padding:0 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:rgba(255,255,255,.5);height:100%;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
+.topbar-tab:hover{color:rgba(255,255,255,.8)}
+.topbar-tab.active{color:#fff;border-bottom-color:rgba(255,255,255,.8)}
+.topbar-right{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;margin-left:auto}
 
-/* ── SUBBAR (filtro mês) ── */
-.subbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 20px;height:40px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+/* ── SUBBAR ── */
+.subbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 24px;height:42px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .subbar-label{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px}
 .subbar-select{background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:4px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;cursor:pointer;outline:none;height:28px}
+.subbar-select:focus{border-color:var(--acc)}
 
 /* ── PAGES ── */
 .page{display:none;flex:1;overflow:auto}.page.active{display:flex;flex-direction:column}
-.page-inner{padding:20px 24px 40px;flex:1}
+.page-inner{padding:20px 24px 48px;flex:1}
 
 /* ── TERMINAL TABS ── */
-.term-tabs{display:flex;gap:2px;margin-bottom:0;padding:0}
-.term-tab{padding:7px 18px;font-size:11px;font-weight:600;border:none;background:var(--sur2);color:var(--txt3);border-radius:var(--r) var(--r) 0 0;cursor:pointer;font-family:inherit;border:1px solid var(--bdr);border-bottom:none;transition:all .12s;text-transform:uppercase;letter-spacing:.5px}
-.term-tab:hover{color:var(--txt2)}
-.term-tab.active{background:var(--sur3);color:var(--acc);border-color:var(--bdr2);border-bottom:1px solid var(--sur3)}
-.term-body{background:var(--sur3);border:1px solid var(--bdr2);border-radius:0 var(--r3) var(--r3) var(--r3);padding:20px}
+.term-tabs{display:flex;gap:2px;padding:0 0 0 0}
+.term-tab{padding:8px 20px;font-size:11px;font-weight:600;border:none;background:var(--sur3);color:var(--txt3);border-radius:var(--r) var(--r) 0 0;cursor:pointer;font-family:inherit;border:1px solid var(--bdr);border-bottom:none;transition:all .12s;text-transform:uppercase;letter-spacing:.5px}
+.term-tab:hover{color:var(--txt2);background:var(--sur)}
+.term-tab.active{background:var(--sur);color:var(--acc);border-color:var(--bdr2);font-weight:700}
+.term-body{background:var(--sur);border:1px solid var(--bdr2);border-radius:0 var(--r3) var(--r3) var(--r3);padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 
 /* ── KPI GRID ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin-bottom:20px}
-.kpi{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:.5}
-.kpi:hover{border-color:var(--bdr2)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+.kpi{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s}
+.kpi:hover{box-shadow:0 2px 8px rgba(0,0,0,.09)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--acc);opacity:.7}
 .kpi.kpi-neg::before{background:var(--red)}
 .kpi.kpi-pos::before{background:var(--green)}
 .kpi .klbl{font-size:9.5px;color:var(--txt3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
-.kpi .kval{font-size:21px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.kpi .kval{font-size:22px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .kpi .kval.neg{color:var(--red)}.kpi .kval.pos{color:var(--green)}
-.kpi .ksub-lbl{font-size:9px;color:var(--txt3);margin-top:7px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.kpi .ksub-val{font-size:12px;font-weight:600;color:var(--txt2);font-variant-numeric:tabular-nums}
+.kpi .ksub-lbl{font-size:9px;color:var(--txt3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi .ksub-val{font-size:12px;font-weight:600;color:var(--txt2);font-variant-numeric:tabular-nums;margin-top:2px}
 
 /* ── SECTION TITLES ── */
-.sec{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
+.sec{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
 .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
 /* ── CHARTS ── */
-.chart-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 16px 10px;margin-bottom:14px}
-.chart-wrap{position:relative;height:185px}
-.chart-wrap-vt{position:relative;height:185px;padding-bottom:20px;overflow:visible}
+.chart-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 16px 10px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.chart-wrap{position:relative;height:195px}
+.chart-wrap-vt{position:relative;height:195px;padding-bottom:22px;overflow:visible}
 
-/* ── TABELAS TCARD ── */
-.t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-.tcard{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
-.tcard-head{background:var(--sur);padding:8px 12px;font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr)}
-.tcard-head.danger{color:var(--red)}
+/* ── TCARD ── */
+.t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.tcard{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tcard-head{background:var(--acc);padding:9px 14px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.tcard-head.danger{background:var(--red)}
 .tcard table{width:100%;font-size:11px;border-collapse:collapse}
-.tcard td{padding:5px 12px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
-.tcard td:first-child{color:var(--txt3)}.tcard td:not(:first-child){text-align:right;color:var(--txt)}
-.tcard .tr-tot td{font-weight:700;background:rgba(255,255,255,.02)}
+.tcard td{padding:6px 14px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.tcard td:first-child{color:var(--txt3)}.tcard td:not(:first-child){text-align:right;color:var(--txt);font-weight:500}
+.tcard .tr-tot td{font-weight:700;background:var(--acc-h);color:var(--acc)}
 
 /* ── FTBL ── */
-.ftbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.ftbl{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .ftbl table{width:100%;font-size:11px;border-collapse:collapse}
-.ftbl th{background:var(--sur);font-size:10px;font-weight:700;padding:8px 12px;color:var(--txt3);text-align:left;border-bottom:1px solid var(--bdr);text-transform:uppercase;letter-spacing:.4px}
+.ftbl th{background:var(--navy);font-size:10px;font-weight:700;padding:9px 14px;color:#fff;text-align:left;letter-spacing:.4px;text-transform:uppercase}
 .ftbl th:not(:first-child),.ftbl td:not(:first-child){text-align:right}
-.ftbl td{padding:6px 12px;border-top:1px solid var(--bdr);color:var(--txt);font-variant-numeric:tabular-nums}
-.ftbl td:first-child{color:var(--txt3)}.ftbl .tr-tot td{font-weight:700;background:rgba(255,255,255,.02)}
-.sc{max-height:300px;overflow-y:auto}
+.ftbl td{padding:7px 14px;border-top:1px solid var(--bdr);color:var(--txt);font-variant-numeric:tabular-nums}
+.ftbl td:first-child{color:var(--txt3)}.ftbl .tr-tot td{font-weight:700;background:var(--acc-h);color:var(--acc)}
+.sc{max-height:320px;overflow-y:auto}
 
 /* ── TTBL (Take or Pay) ── */
-.ttbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.ttbl{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .ttbl table{width:100%;font-size:12px;border-collapse:collapse}
-.ttbl th{background:var(--sur);color:var(--txt2);font-size:10px;font-weight:700;padding:9px 12px;text-align:left;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
+.ttbl th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:10px 14px;text-align:left;letter-spacing:.5px;text-transform:uppercase}
 .ttbl th:not(:first-child){text-align:right}
-.ttbl td{padding:8px 12px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.ttbl td{padding:8px 14px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
 .ttbl td:first-child{color:var(--txt2);font-weight:500}.ttbl td:not(:first-child){text-align:right;color:var(--txt)}
-.ttbl .tr-tot td{font-weight:700;background:rgba(255,255,255,.03);color:var(--txt)}
+.ttbl .tr-tot td{font-weight:700;background:var(--acc-h);color:var(--acc)}
 .ttbl .fat{color:var(--red);font-weight:600}
 .ttbl input[type=number]{background:transparent;border:none;border-bottom:1px dashed var(--bdr2);color:var(--txt);font-size:12px;font-family:inherit;width:80px;text-align:right;outline:none}
 .ttbl input[type=number]:focus{border-bottom-color:var(--acc)}
@@ -124,59 +125,62 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── CONFIG ── */
 .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:20px 24px}
-.cfg-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
-.cfg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txt3);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--bdr)}
+.cfg-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cfg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--acc)}
 .cfg-field{margin-bottom:12px}
-.cfg-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.cfg-field input{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:7px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
-.cfg-field input:focus{border-color:var(--acc)}
-.cfg-save{width:100%;padding:8px;background:var(--acc);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:2px}
+.cfg-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.cfg-field input{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:8px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
+.cfg-field input:focus{border-color:var(--acc);background:#fff}
+.cfg-save{width:100%;padding:9px;background:var(--acc);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;transition:background .15s}
 .cfg-save:hover{background:var(--acc2)}
 
 /* ── UPLOAD ── */
 .upl-page{padding:20px 24px}
 .upl-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.upl-page-title{font-size:13px;font-weight:600;color:var(--txt)}
-.upl-warn{background:var(--amber-l);border:1px solid rgba(212,148,58,.2);border-radius:var(--r);padding:9px 14px;font-size:11px;color:var(--amber);margin-bottom:18px}
+.upl-page-title{font-size:14px;font-weight:700;color:var(--navy)}
+.upl-warn{background:var(--amber-l);border:1px solid rgba(196,122,26,.25);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--amber);margin-bottom:18px}
 .upl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
-.upl-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px}
-.upl-card-title{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--txt)}
+.upl-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.upl-card-title{font-size:12px;font-weight:700;margin-bottom:5px;color:var(--navy)}
 .upl-card-desc{font-size:11px;color:var(--txt3);margin-bottom:12px;line-height:1.5}
 .upl-card-desc.warn{color:var(--amber)}
-.upl-drop{border:1px dashed var(--bdr2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--sur3)}
+.upl-drop{border:1px dashed var(--bdr2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--sur2)}
 .upl-drop:hover{border-color:var(--acc);background:var(--acc-l)}
 .upl-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upl-drop-icon{font-size:20px;margin-bottom:6px;opacity:.6}
+.upl-drop-icon{font-size:22px;margin-bottom:8px;opacity:.7}
 .upl-drop-text{font-size:11px;color:var(--txt3)}.upl-drop-text strong{color:var(--acc);font-weight:600}
 .upl-drop-name{font-size:10px;color:var(--txt3);margin-top:3px;opacity:.6}
-.upl-clear{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--red-l);color:var(--red);border:1px solid rgba(224,92,92,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;font-weight:500}
-.upl-prog{margin-top:7px;font-size:11px;min-height:16px;color:var(--txt3)}
+.upl-clear{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--red-l);color:var(--red);border:1px solid rgba(192,57,43,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;font-weight:500}
+.upl-prog{margin-top:8px;font-size:11px;min-height:16px;color:var(--txt3)}
 .upl-prog.ok{color:var(--green)}.upl-prog.err{color:var(--red)}
 
 /* ── MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,45,107,.55);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal{background:var(--sur2);border:1px solid var(--bdr2);border-radius:var(--r3);padding:26px;width:370px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
-.modal-title{font-size:14px;font-weight:600;margin-bottom:4px}
-.modal-sub{font-size:11px;color:var(--txt3);margin-bottom:16px;line-height:1.5}
-.modal-field{margin-bottom:12px}
-.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
-.modal-field select,.modal-field input[type=date]{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:7px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
-.modal-btns{display:flex;gap:8px;margin-top:18px}
-.modal-btn{flex:1;padding:9px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal{background:#fff;border:1px solid var(--bdr);border-radius:var(--r3);padding:28px;width:380px;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.modal-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--txt3);margin-bottom:18px;line-height:1.5}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.modal-field select,.modal-field input[type=date]{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:8px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
+.modal-field select:focus,.modal-field input[type=date]:focus{border-color:var(--acc)}
+.modal-btns{display:flex;gap:8px;margin-top:20px}
+.modal-btn{flex:1;padding:10px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 .modal-btn.cancel{background:var(--sur3);color:var(--txt2);border:1px solid var(--bdr)}
 .modal-btn.confirm{background:var(--acc);color:#fff}
+.modal-btn.confirm:hover{background:var(--acc2)}
 
 /* ── LOADING ── */
-.ld{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.ld{display:none;position:fixed;inset:0;background:rgba(15,45,107,.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:14px}
 .ld.show{display:flex}
-.spin{width:30px;height:30px;border:2px solid rgba(255,255,255,.08);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+.spin{width:32px;height:32px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.ltxt{color:var(--txt2);font-size:12px;font-weight:500}
+.ltxt{color:rgba(255,255,255,.9);font-size:12px;font-weight:500}
 
 /* ── MISC ── */
 .ferro-filter{display:none}
-.clear-all-btn{padding:6px 14px;background:var(--red-l);color:var(--red);border:1px solid rgba(224,92,92,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+.clear-all-btn{padding:7px 14px;background:var(--red-l);color:var(--red);border:1px solid rgba(192,57,43,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+.clear-all-btn:hover{background:rgba(192,57,43,.12)}
 
 @media(max-width:768px){
   .t3{grid-template-columns:1fr}
@@ -268,6 +272,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="kpi-grid" id="kpi-ferro"></div>
     <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fc"></canvas></div></div>
     <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fd"></canvas></div></div>
+    <div class="sec">Previsão Descarga nos Terminais (Faturamento +5 dias)</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fp"></canvas></div></div>
     <div id="ferro-filter" style="display:none"></div>
     <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
   </div>
@@ -293,21 +298,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-t-top" value="35000"></div>
       <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-t-hid" value="6000"></div>
       <div class="cfg-field"><label>Estática — Anidro (m³)</label><input type="number" id="cfg-t-ani" value="1000"></div>
+      <div class="cfg-field"><label>Tarifa Terminal (R$/m³)</label><input type="number" step="0.01" id="cfg-t-tar" value="23.62"></div>
       <button class="cfg-save" onclick="saveConfig('teciap')">Salvar Teciap</button>
     </div>
     <div class="cfg-card"><div class="cfg-title">Ultracargo RO</div>
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-u-top" value="25000"></div>
       <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-u-hid" value="5000"></div>
+      <div class="cfg-field"><label>Tarifa Terminal (R$/m³)</label><input type="number" step="0.01" id="cfg-u-tar" value="21.87"></div>
       <button class="cfg-save" onclick="saveConfig('ultra')">Salvar Ultracargo</button>
     </div>
     <div class="cfg-card"><div class="cfg-title">Centroeste</div>
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-c-top" value="29417"></div>
       <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-c-hid" value="1250"></div>
+      <div class="cfg-field"><label>Tarifa Terminal (R$/m³)</label><input type="number" step="0.01" id="cfg-c-tar" value="15.79"></div>
       <button class="cfg-save" onclick="saveConfig('centro')">Salvar Centroeste</button>
     </div>
     <div class="cfg-card"><div class="cfg-title">Ferrovia — Rumo</div>
       <div class="cfg-field"><label>Contrato Transporte / Mês (m³)</label><input type="number" id="cfg-f-ct" value="88350"></div>
       <div class="cfg-field"><label>Mínimo Contratual / Mês (m³)</label><input type="number" id="cfg-f-min" value="83933"></div>
+      <div class="cfg-field"><label>Tarifa Ferrovia (R$/m³)</label><input type="number" step="0.01" id="cfg-f-tar" value="156.78"></div>
       <button class="cfg-save" onclick="saveConfig('ferro')">Salvar Ferrovia</button>
     </div>
   </div>
@@ -390,7 +399,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 // ===================== STATE =====================
 let DB=null,FBFNS=null;
 let STATE={nf:[],desc:[],trans:[],est:{},config:{
-  teciap:{top:35000,hid:6000,ani:1000},ultra:{top:25000,hid:5000,ani:0},centro:{top:29417,hid:1250,ani:0},ferro:{ct:88350,min:83933},
+  teciap:{top:35000,hid:6000,ani:1000,tarifa:23.62},
+  ultra:{top:25000,hid:5000,ani:0,tarifa:21.87},
+  centro:{top:29417,hid:1250,ani:0,tarifa:15.79},
+  ferro:{ct:88350,min:83933,tarifa:156.78},
   top_fat:[51418,54736,75133,87098,0,0,0,0,0,0,0,0],
   top_min:[60183,83933,83933,83933,83933,107683,107683,107683,107683,107683,131433,131433],
   top_cont:[63350,88350,88350,88350,88350,113350,113350,113350,113350,113350,138350,138350]
@@ -982,18 +994,22 @@ function applyConfig(){
   document.getElementById('cfg-t-top').value=STATE.config.teciap.top;
   document.getElementById('cfg-t-hid').value=STATE.config.teciap.hid;
   document.getElementById('cfg-t-ani').value=STATE.config.teciap.ani;
+  document.getElementById('cfg-t-tar').value=STATE.config.teciap.tarifa||23.62;
   document.getElementById('cfg-u-top').value=STATE.config.ultra.top;
   document.getElementById('cfg-u-hid').value=STATE.config.ultra.hid;
+  document.getElementById('cfg-u-tar').value=STATE.config.ultra.tarifa||21.87;
   document.getElementById('cfg-c-top').value=STATE.config.centro.top;
   document.getElementById('cfg-c-hid').value=STATE.config.centro.hid;
+  document.getElementById('cfg-c-tar').value=STATE.config.centro.tarifa||15.79;
   document.getElementById('cfg-f-ct').value=STATE.config.ferro.ct;
   document.getElementById('cfg-f-min').value=STATE.config.ferro.min;
+  document.getElementById('cfg-f-tar').value=STATE.config.ferro.tarifa||156.78;
 }
 async function saveConfig(w){
-  if(w==='teciap'){STATE.config.teciap.top=+document.getElementById('cfg-t-top').value;STATE.config.teciap.hid=+document.getElementById('cfg-t-hid').value;STATE.config.teciap.ani=+document.getElementById('cfg-t-ani').value;}
-  else if(w==='ultra'){STATE.config.ultra.top=+document.getElementById('cfg-u-top').value;STATE.config.ultra.hid=+document.getElementById('cfg-u-hid').value;}
-  else if(w==='centro'){STATE.config.centro.top=+document.getElementById('cfg-c-top').value;STATE.config.centro.hid=+document.getElementById('cfg-c-hid').value;}
-  else if(w==='ferro'){STATE.config.ferro.ct=+document.getElementById('cfg-f-ct').value;STATE.config.ferro.min=+document.getElementById('cfg-f-min').value;}
+  if(w==='teciap'){STATE.config.teciap.top=+document.getElementById('cfg-t-top').value;STATE.config.teciap.hid=+document.getElementById('cfg-t-hid').value;STATE.config.teciap.ani=+document.getElementById('cfg-t-ani').value;STATE.config.teciap.tarifa=+document.getElementById('cfg-t-tar').value;}
+  else if(w==='ultra'){STATE.config.ultra.top=+document.getElementById('cfg-u-top').value;STATE.config.ultra.hid=+document.getElementById('cfg-u-hid').value;STATE.config.ultra.tarifa=+document.getElementById('cfg-u-tar').value;}
+  else if(w==='centro'){STATE.config.centro.top=+document.getElementById('cfg-c-top').value;STATE.config.centro.hid=+document.getElementById('cfg-c-hid').value;STATE.config.centro.tarifa=+document.getElementById('cfg-c-tar').value;}
+  else if(w==='ferro'){STATE.config.ferro.ct=+document.getElementById('cfg-f-ct').value;STATE.config.ferro.min=+document.getElementById('cfg-f-min').value;STATE.config.ferro.tarifa=+document.getElementById('cfg-f-tar').value;}
   if(DB){const{doc,setDoc}=FBFNS;await setDoc(doc(DB,'dashboard','config'),STATE.config);}
   alert('✅ Salvo!');renderAll();
 }
@@ -1030,11 +1046,13 @@ function getMonthData(){
   const today=new Date();
   const isCurrentMonth=!selectedMonth||(selectedMonth.year===today.getFullYear()&&selectedMonth.month===today.getMonth()+1);
   const diasMes=daysInMonth(year,month);
-  const diaHoje=isCurrentMonth?today.getDate():diasMes;
-  const diasPassados=Math.max(1,isCurrentMonth?diaHoje-1:diasMes);
 
-  const desc=STATE.desc.filter(r=>r.mes===month&&r.ano===year);
-  const nf=STATE.nf.filter(r=>r.mes===month&&r.ano===year);
+  // Sempre usa D-1 como fechamento — os relatórios trazem dados até o dia anterior
+  const diaHoje=isCurrentMonth?Math.max(1,today.getDate()-1):diasMes;
+  const diasPassados=Math.max(1,diaHoje); // D-1 já é o último dia fechado
+
+  const desc=STATE.desc.filter(r=>r.mes===month&&r.ano===year&&r.dia<=diaHoje);
+  const nf=STATE.nf.filter(r=>r.mes===month&&r.ano===year&&r.dia<=diaHoje);
   const trans=STATE.trans; // always current
   const DEPS_EXP=[DEP_T,DEP_U,DEP_C];
 
@@ -1153,8 +1171,7 @@ function getMonthData(){
   const FERRO_DESC_CLIS=new Set([11966,7605,3492]);
   const ferroDescBD={};
   STATE.desc.filter(r=>{
-    // Filtrar pelo mês/ano do período selecionado
-    return r.mes===month&&r.ano===year&&r.transp===13746&&FERRO_DESC_CLIS.has(r.cliente);
+    return r.mes===month&&r.ano===year&&r.dia<=diaHoje&&r.transp===13746&&FERRO_DESC_CLIS.has(r.cliente);
   }).forEach(r=>{
     ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;
   });
@@ -1179,11 +1196,14 @@ function getMonthData(){
   function calcBacklog(byDay,ct){
     const pd=ct/diasMes;
     let bl=-pd;
-    for(let d=1;d<diaHoje;d++)bl=(byDay[d]||0)-pd+bl;
+    // Acumula do dia 1 até diaHoje (D-1) inclusive
+    for(let d=1;d<=diaHoje;d++)bl=(byDay[d]||0)-pd+bl;
     return bl;
   }
   function calcVolProj(byDay){
-    const total=Object.values(byDay).reduce((a,b)=>a+b,0);
+    // Soma apenas até D-1 (diaHoje)
+    let total=0;
+    for(let d=1;d<=diaHoje;d++)total+=(byDay[d]||0);
     return(total/diasPassados)*diasMes;
   }
 
@@ -1202,6 +1222,14 @@ function getMonthData(){
   const cExp=Object.values(cExpBD).reduce((a,b)=>a+b,0);
 
   const ferroCt=STATE.config.ferro.ct,ferroMin=STATE.config.ferro.min;
+  // Previsão descarga Terminal Paulínia (7605): data faturamento + 5 dias
+  const previsaoDescTermBD={};
+  nfExp.filter(r=>r.codCliente===7605).forEach(r=>{
+    const emDt=new Date(r.dt+'T00:00:00');
+    const prevDt=addDays(emDt,5);
+    const diff=diffDays(prevDt,new Date());
+    previsaoDescTermBD[diff]=(previsaoDescTermBD[diff]||0)+r.qtde;
+  });
 
   return{
     dias_mes:diasMes,diaHoje,year,month,
@@ -1210,25 +1238,30 @@ function getMonthData(){
        proj:calcVolProj(tBD),trans:transCod(CLI_T),
        estHid:STATE.config.teciap.hid,estAni:STATE.config.teciap.ani,hidFe:estHid.teciap_hid_fe||0,aniFe:estAni.teciap_ani_fe||0,
        giro:tRec/((STATE.config.teciap.hid||1)+(STATE.config.teciap.ani||0)),
+       custo:tRec*(STATE.config.teciap.tarifa||0),tarifa:STATE.config.teciap.tarifa||0,
        descBD:tBD,carrBD:nfByDay(DEP_T),estBD:estHistByDay('t_hid'),
        quebra:quebra(CLI_T),usinaReal:usinaReal(CLI_T),usinaPrevisao:usinaPrevisao(CLI_T)},
     u:{rec:uRec,exp:nfTotal(DEP_U),ct:STATE.config.ultra.top,saldo:uRec-STATE.config.ultra.top,
        backlog:calcBacklog(uBD,STATE.config.ultra.top),proj:calcVolProj(uBD),trans:transCod(CLI_U),
        estHid:STATE.config.ultra.hid,hidFe:estHid.ultra_hid_fe||0,
        giro:uRec/(STATE.config.ultra.hid||1),
+       custo:uRec*(STATE.config.ultra.tarifa||0),tarifa:STATE.config.ultra.tarifa||0,
        descBD:uBD,carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
        quebra:quebra(CLI_U),usinaReal:usinaReal(CLI_U),usinaPrevisao:usinaPrevisao(CLI_U)},
     c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cExp-STATE.config.centro.top,
        backlog:calcBacklog(cExpBD,STATE.config.centro.top),proj:calcVolProj(cExpBD),trans:transCod(CLI_C),
        estHid:STATE.config.centro.hid,hidFe:estHid.centro_hid_fe||0,
        giro:cRec/(STATE.config.centro.hid||1),
+       custo:cRec*(STATE.config.centro.tarifa||0),tarifa:STATE.config.centro.tarifa||0,
        descBD:cBD,carrBD:cExpBD,estBD:estHistByDay('c_hid'),
        quebra:quebra(CLI_C),usinaReal:usinaReal(CLI_C),usinaPrevisao:usinaPrevisao(CLI_C)},
     ferro:{carrTotal:ferroTotal,descTotal:ferroDescTotal,ct:ferroCt,min:ferroMin,
            saldoCt:ferroTotal-ferroCt,backlog:calcBacklog(ferroCarrBD,ferroCt),
            proj:mediaFerro*diasMes,transito:transFerro,vagoes:Math.round(transFerro/95),media:mediaFerro,
+           custo:ferroTotal*(STATE.config.ferro.tarifa||0),tarifa:STATE.config.ferro.tarifa||0,
            saldoMin:ferroTotal-ferroMin,backlogMin:calcBacklog(ferroCarrBD,ferroMin),
-           carrBD:ferroCarrBD,descBD:ferroDescBD,byClient:nfByClient()}
+           carrBD:ferroCarrBD,descBD:ferroDescBD,byClient:nfByClient(),
+           previsaoDescTerm:previsaoDescTermBD}
   };
 }
 
@@ -1243,7 +1276,7 @@ function mkC(id,labels,data,color){
   if(CH[id]){CH[id].destroy();delete CH[id];}
   const el=document.getElementById(id);if(!el)return;
   CH[id]=new Chart(el,{type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(255,255,255,.03)'),borderRadius:3}]},
+    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(0,0,0,.03)'),borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:22}},
       plugins:{
@@ -1251,8 +1284,8 @@ function mkC(id,labels,data,color){
         tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}},
       },
       scales:{
-        x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
-        y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+        x:{ticks:{color:'#8690aa',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#8690aa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}
       }
     },
     plugins:[{
@@ -1277,12 +1310,43 @@ function mkC(id,labels,data,color){
   });
 }
 
+// Gráfico Previsão Descarga nos Terminais: eixo D-5..D+10
+function mkCPrev(id,byDiff){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const el=document.getElementById(id);if(!el)return;
+  const offsets=[-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10];
+  const labels=offsets.map(d=>d===0?'D':d>0?'D+'+d:'D'+d);
+  const data=offsets.map(d=>byDiff[d]||0);
+  const colors=offsets.map(d=>d<0?'rgba(224,92,92,.6)':d===0?'#4d7ef5':'rgba(77,126,245,.5)');
+  CH[id]=new Chart(el,{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:22}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}}},
+      scales:{
+        x:{ticks:{color:'#6b728f',font:{size:9}},grid:{display:false}},
+        y:{ticks:{color:'#6b728f',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.06)'},beginAtZero:true}
+      }
+    },
+    plugins:[{id:'prevLabels',afterDatasetsDraw(chart){
+      const{ctx,data:d,scales:{x,y}}=chart;ctx.save();
+      ctx.font='bold 9px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      d.datasets[0].data.forEach((v,i)=>{
+        if(!v||v<=0)return;
+        const lbl=v>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
+        ctx.fillStyle='#6b728f';
+        ctx.fillText(lbl,x.getPixelForValue(i),y.getPixelForValue(v)-2);
+      });ctx.restore();
+    }}]
+  });
+}
+
 // Gráfico de Carregamento VT: volume (m³) em cima, VTs embaixo
 function mkCVT(id,labels,data,color,vagaoM3=98){
   if(CH[id]){CH[id].destroy();delete CH[id];}
   const el=document.getElementById(id);if(!el)return;
   CH[id]=new Chart(el,{type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(255,255,255,.03)'),borderRadius:3}]},
+    data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>0?color:'rgba(0,0,0,.03)'),borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:22,bottom:18}},
       plugins:{
@@ -1290,8 +1354,8 @@ function mkCVT(id,labels,data,color,vagaoM3=98){
         tooltip:{callbacks:{label:c=>{const v=c.parsed.y;return[fmt(v,0)+' m³','VTs: '+Math.round(v/vagaoM3)];}}},
       },
       scales:{
-        x:{ticks:{color:'#4a5175',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
-        y:{ticks:{color:'#4a5175',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+        x:{ticks:{color:'#8690aa',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#8690aa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}
       }
     },
     plugins:[{
@@ -1313,7 +1377,7 @@ function mkCVT(id,labels,data,color,vagaoM3=98){
           // VTs abaixo do eixo X
           ctx.font='9px Inter,sans-serif';
           ctx.textBaseline='top';
-          ctx.fillStyle='#5b8af0';
+          ctx.fillStyle='#1e4fbd';
           ctx.fillText(Math.round(v/vagaoM3),xPos,bottom+3);
         });
         ctx.restore();
@@ -1408,16 +1472,17 @@ function renderTerminal(D){
     {l:'Expedido Ferrovia (m³)',v:fmt(tFerroVal,0),sl:'Expedido Rodo/Transf (m³)',sv:fmt(Math.max(0,tRodoVal),0)},
     {l:'Take or Pay / Mês (m³)',v:fmt(cfg.teciap.top,0)},
     {l:'Saldo Take or Pay (m³)',v:fmt(D.t.saldo,0),c:D.t.saldo<0?'neg':'pos'},
-    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.t.backlog,0)},
+    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.t.backlog,0),c:D.t.backlog<0?'neg':'pos'},
     {l:'Volume Projetado | Recebimento',v:fmt(D.t.proj,0)},
     {l:'Trânsito Caminhões para Teciap (m³)',v:fmt(D.t.trans,0)},
     {l:'Estática Contratada | Hidratado',v:fmt(cfg.teciap.hid,0),sl:'Estática Contratada | Anidro',sv:fmt(cfg.teciap.ani,0)},
     {l:'Estoque atual | Hidratado (m³)',v:fmt(D.t.hidFe,0),sl:'Estoque atual | Anidro (m³)',sv:fmt(D.t.aniFe,0)},
-    {l:'Giro',v:fmt(D.t.giro,2)}
+    {l:'Giro',v:fmt(D.t.giro,2)},
+    {l:'Previsão Custo Mês',v:'R$ '+fmt(D.t.custo,0),sl:fmt(D.t.rec,0)+' m³ × R$ '+D.t.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-td',L,bda(D.t.descBD,D),'#5b8af0');
-  mkCVT('ch-tc',L,bda(D.t.carrBD,D),'#3dd68c');
-  mkC('ch-te',L,bda(D.t.estBD,D),'#7c6af0');
+  mkC('ch-td',L,bda(D.t.descBD,D),'#1e4fbd');
+  mkCVT('ch-tc',L,bda(D.t.carrBD,D),'#1a9e5c');
+  mkC('ch-te',L,bda(D.t.estBD,D),'#2d6adf');
   rUsina('usina-teciap',D.t.usinaReal,D.t.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-teciap',D.t.quebra);
 
@@ -1429,16 +1494,17 @@ function renderTerminal(D){
     {l:'Expedido (m³)',v:fmt(uExpVal,0)},
     {l:'Take or Pay / Mês (m³)',v:fmt(cfg.ultra.top,0)},
     {l:'Saldo Take or Pay (m³)',v:fmt(D.u.saldo,0),c:D.u.saldo<0?'neg':'pos'},
-    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.u.backlog,0)},
+    {l:'Backlog/dia Recebimento (m³)',v:fmt(D.u.backlog,0),c:D.u.backlog<0?'neg':'pos'},
     {l:'Volume Projetado | Recebimento',v:fmt(D.u.proj,0)},
     {l:'Transitório Caminhões Ultracargo (m³)',v:fmt(D.u.trans,0)},
     {l:'Estática Contratada | Hidratado',v:fmt(cfg.ultra.hid,0)},
     {l:'Estoque atual | Hidratado (m³)',v:fmt(D.u.hidFe,0)},
-    {l:'Giro',v:fmt(D.u.giro,2)}
+    {l:'Giro',v:fmt(D.u.giro,2)},
+    {l:'Previsão Custo Mês',v:'R$ '+fmt(D.u.custo,0),sl:fmt(D.u.rec,0)+' m³ × R$ '+D.u.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-ud',L,bda(D.u.descBD,D),'#5b8af0');
-  mkCVT('ch-uc',L,bda(D.u.carrBD,D),'#3dd68c');
-  mkC('ch-ue',L,bda(D.u.estBD,D),'#7c6af0');
+  mkC('ch-ud',L,bda(D.u.descBD,D),'#1e4fbd');
+  mkCVT('ch-uc',L,bda(D.u.carrBD,D),'#1a9e5c');
+  mkC('ch-ue',L,bda(D.u.estBD,D),'#2d6adf');
   rUsina('usina-ultra',D.u.usinaReal,D.u.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-ultra',D.u.quebra);
 
@@ -1452,16 +1518,17 @@ function renderTerminal(D){
     {l:'Expedido Vagões (m³)',v:fmt(cExpVal,0)},
     {l:'Contrato / Mês (m³)',v:fmt(cfg.centro.top,0)},
     {l:'Saldo Contrato/Mês (m³)',v:fmt(D.c.saldo,0),c:D.c.saldo<0?'neg':'pos'},
-    {l:'Backlog/dia Expedição VTs (m³)',v:fmt(D.c.backlog,0)},
+    {l:'Backlog/dia Expedição VTs (m³)',v:fmt(D.c.backlog,0),c:D.c.backlog<0?'neg':'pos'},
     {l:'Volume Projetado',v:fmt(D.c.proj,0)},
     {l:'Trânsito Caminhões (m³)',v:fmt(D.c.trans,0)},
     {l:'Estática Contratada (m³)',v:fmt(cfg.centro.hid,0)},
     {l:'Estoque atual (m³)',v:fmt(D.c.hidFe,0)},
-    {l:'Giro',v:fmt(D.c.giro,2)}
+    {l:'Giro',v:fmt(D.c.giro,2)},
+    {l:'Previsão Custo Mês',v:'R$ '+fmt(D.c.custo,0),sl:fmt(D.c.rec,0)+' m³ × R$ '+D.c.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-cd',L,bda(D.c.descBD,D),'#5b8af0');
-  mkCVT('ch-cc',L,bda(D.c.carrBD,D),'#3dd68c');
-  mkC('ch-ce',L,bda(D.c.estBD,D),'#7c6af0');
+  mkC('ch-cd',L,bda(D.c.descBD,D),'#1e4fbd');
+  mkCVT('ch-cc',L,bda(D.c.carrBD,D),'#1a9e5c');
+  mkC('ch-ce',L,bda(D.c.estBD,D),'#2d6adf');
   rUsina('usina-centro',D.c.usinaReal,D.c.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-centro',D.c.quebra);
 }
@@ -1473,18 +1540,20 @@ function renderFerrovia(D){
     {l:'Vol. Descarregado Terminais (m³)',v:fmt(D.ferro.descTotal,0)},
     {l:'Contrato Transporte/Mês (m³)',v:fmt(D.ferro.ct,0)},
     {l:'Saldo Contrato Transporte (m³)',v:fmt(D.ferro.saldoCt,0),c:D.ferro.saldoCt<0?'neg':'pos'},
-    {l:'Backlog/dia Carregamento VT (m³)',v:fmt(D.ferro.backlog,0)},
+    {l:'Backlog/dia Carregamento VT (m³)',v:fmt(D.ferro.backlog,0),c:D.ferro.backlog<0?'neg':'pos'},
     {l:'Volume Projetado',v:fmt(D.ferro.proj,0)},
     {l:'Trânsito Ferroviário (m³)',v:fmt(D.ferro.transito,0)},
     {l:'Vagões em Trânsito',v:fmt(D.ferro.vagoes,0)},
     {l:'Média Carregamento Mês',v:fmt(D.ferro.media,0)},
     {l:'Volume Mínimo Rumo/Mês (m³)',v:fmt(D.ferro.min,0)},
     {l:'Saldo Vol. Mínimo Rumo (m³)',v:fmt(D.ferro.saldoMin,0),c:D.ferro.saldoMin<0?'neg':'pos'},
-    {l:'Backlog/dia Mínimo Rumo (m³)',v:fmt(D.ferro.backlogMin,0)}
+    {l:'Backlog/dia Mínimo Rumo (m³)',v:fmt(D.ferro.backlogMin,0)},
+    {l:'Previsão Custo Ferrovia',v:'R$ '+fmt(D.ferro.custo,0),sl:fmt(D.ferro.carrTotal,0)+' m³ × R$ '+D.ferro.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkCVT('ch-fc',L,bda(D.ferro.carrBD,D),'#5b8af0');
-  mkCVT('ch-fd',L,bda(D.ferro.descBD,D),'#3dd68c');
-  // Remover filtro de abas — tabela sempre mostra todos os clientes
+  mkCVT('ch-fc',L,bda(D.ferro.carrBD,D),'#1e4fbd');
+  mkCVT('ch-fd',L,bda(D.ferro.descBD,D),'#1a9e5c');
+  // Gráfico Previsão Descarga nos Terminais (Terminal Paulínia +5 dias)
+  mkCPrev('ch-fp',D.ferro.previsaoDescTerm);
   document.getElementById('ferro-filter').innerHTML='';
   renderFerroTable(D);
 }
