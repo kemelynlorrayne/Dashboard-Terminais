@@ -25,154 +25,165 @@
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0f18;--sur:#13161f;--sur2:#1a1d2e;--sur3:#1f2235;
-  --bdr:#242840;--bdr2:#2d3150;
-  --txt:#d8dce8;--txt2:#7c839e;--txt3:#454c6a;
-  --acc:#5b8af0;--acc-d:#2d5cd4;--acc-l:rgba(91,138,240,.1);
-  --green:#3dd68c;--green-l:rgba(61,214,140,.1);
-  --red:#f06b6b;--red-l:rgba(240,107,107,.1);
-  --amber:#f0a84e;--amber-l:rgba(240,168,78,.1);
+  --bg:#0b0d14;--sur:#111420;--sur2:#161929;--sur3:#1c2035;
+  --bdr:#222640;--bdr2:#2a2f50;
+  --txt:#c8cce0;--txt2:#6b728f;--txt3:#3d4460;
+  --acc:#4d7ef5;--acc2:#3a6be0;--acc-l:rgba(77,126,245,.08);
+  --green:#35c97a;--green-l:rgba(53,201,122,.08);
+  --red:#e05c5c;--red-l:rgba(224,92,92,.08);
+  --amber:#d4943a;--amber-l:rgba(212,148,58,.08);
+  --purple:#8b6cf5;
   --r:6px;--r2:10px;--r3:14px;
+  --nav-w:220px;
 }
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px;line-height:1.5}
+html,body{height:100%}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
 
-/* NAV */
-.nav{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 24px;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;gap:4px}
-.nav-logo{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--txt);margin-right:24px;white-space:nowrap;text-transform:uppercase}
-.nav-tabs{display:flex;height:100%;gap:0}
-.nav-tab{padding:0 14px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--txt3);height:100%;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap;letter-spacing:.2px}
-.nav-tab:hover{color:var(--txt2)}
-.nav-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-.nav-right{margin-left:auto;font-size:11px;color:var(--txt3);white-space:nowrap}
+/* ── TOPBAR ── */
+.topbar{background:var(--sur);border-bottom:1px solid var(--bdr);height:52px;display:flex;align-items:center;padding:0 20px;gap:0;position:sticky;top:0;z-index:200;flex-shrink:0}
+.topbar-logo{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt);padding-right:20px;border-right:1px solid var(--bdr);margin-right:4px;white-space:nowrap}
+.topbar-tabs{display:flex;height:100%;gap:0;flex:1}
+.topbar-tab{padding:0 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--txt3);height:100%;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
+.topbar-tab:hover{color:var(--txt2)}
+.topbar-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.topbar-right{font-size:11px;color:var(--txt3);white-space:nowrap;margin-left:auto}
 
-/* MONTH BAR */
-.month-bar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:8px 24px;display:flex;align-items:center;gap:10px}
-.month-label{font-size:11px;color:var(--txt3);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
-.month-select{background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:5px 12px;border-radius:var(--r);font-size:12px;font-family:inherit;cursor:pointer;outline:none}
-.month-select:focus{border-color:var(--acc)}
+/* ── SUBBAR (filtro mês) ── */
+.subbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 20px;height:40px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.subbar-label{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px}
+.subbar-select{background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:4px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;cursor:pointer;outline:none;height:28px}
 
-/* TERMINAL TABS */
-.term-tabs{padding:20px 24px 0;display:flex;gap:2px}
-.term-tab{padding:8px 20px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--txt3);border-radius:var(--r) var(--r) 0 0;cursor:pointer;font-family:inherit;border:1px solid transparent;border-bottom:none;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+/* ── PAGES ── */
+.page{display:none;flex:1;overflow:auto}.page.active{display:flex;flex-direction:column}
+.page-inner{padding:20px 24px 40px;flex:1}
+
+/* ── TERMINAL TABS ── */
+.term-tabs{display:flex;gap:2px;margin-bottom:0;padding:0}
+.term-tab{padding:7px 18px;font-size:11px;font-weight:600;border:none;background:var(--sur2);color:var(--txt3);border-radius:var(--r) var(--r) 0 0;cursor:pointer;font-family:inherit;border:1px solid var(--bdr);border-bottom:none;transition:all .12s;text-transform:uppercase;letter-spacing:.5px}
 .term-tab:hover{color:var(--txt2)}
-.term-tab.active{background:var(--sur2);color:var(--acc);border-color:var(--bdr);border-bottom:1px solid var(--sur2)}
+.term-tab.active{background:var(--sur3);color:var(--acc);border-color:var(--bdr2);border-bottom:1px solid var(--sur3)}
+.term-body{background:var(--sur3);border:1px solid var(--bdr2);border-radius:0 var(--r3) var(--r3) var(--r3);padding:20px}
 
-/* PAGES */
-.page{display:none;padding:0 24px 48px}.page.active{display:block}
-.term-content{background:var(--sur2);border:1px solid var(--bdr);border-radius:0 var(--r3) var(--r3) var(--r3);padding:24px}
-
-/* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:24px}
-.kpi{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 18px;transition:border-color .15s}
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin-bottom:20px}
+.kpi{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:.5}
 .kpi:hover{border-color:var(--bdr2)}
-.kpi .klbl{font-size:10px;color:var(--txt3);margin-bottom:8px;line-height:1.4;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.kpi .kval{font-size:22px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.kpi.kpi-neg::before{background:var(--red)}
+.kpi.kpi-pos::before{background:var(--green)}
+.kpi .klbl{font-size:9.5px;color:var(--txt3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
+.kpi .kval{font-size:21px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .kpi .kval.neg{color:var(--red)}.kpi .kval.pos{color:var(--green)}
-.kpi .ksub-lbl{font-size:9px;color:var(--txt3);margin-top:8px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
-.kpi .ksub-val{font-size:13px;font-weight:600;color:var(--txt2);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .ksub-lbl{font-size:9px;color:var(--txt3);margin-top:7px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi .ksub-val{font-size:12px;font-weight:600;color:var(--txt2);font-variant-numeric:tabular-nums}
 
-/* SECTION TITLES */
-.sec{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+/* ── SECTION TITLES ── */
+.sec{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
 .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
-/* CHARTS */
-.chart-card{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px 18px 14px;margin-bottom:16px}
-.chart-wrap{position:relative;height:190px}
-.chart-wrap-vt{position:relative;height:190px;padding-bottom:22px;overflow:visible}
+/* ── CHARTS ── */
+.chart-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 16px 10px;margin-bottom:14px}
+.chart-wrap{position:relative;height:185px}
+.chart-wrap-vt{position:relative;height:185px;padding-bottom:20px;overflow:visible}
 
-/* TABLES */
-.t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
-.tcard{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
-.tcard-head{background:var(--sur);padding:9px 14px;font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr)}
+/* ── TABELAS TCARD ── */
+.t3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.tcard{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
+.tcard-head{background:var(--sur);padding:8px 12px;font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr)}
 .tcard-head.danger{color:var(--red)}
 .tcard table{width:100%;font-size:11px;border-collapse:collapse}
-.tcard td{padding:6px 14px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.tcard td{padding:5px 12px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
 .tcard td:first-child{color:var(--txt3)}.tcard td:not(:first-child){text-align:right;color:var(--txt)}
-.tcard .tr-tot td{font-weight:700;background:rgba(255,255,255,.02);color:var(--txt)}
+.tcard .tr-tot td{font-weight:700;background:rgba(255,255,255,.02)}
 
-.ftbl{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:16px}
+/* ── FTBL ── */
+.ftbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
 .ftbl table{width:100%;font-size:11px;border-collapse:collapse}
-.ftbl th{background:var(--sur);font-size:10px;font-weight:700;padding:9px 14px;color:var(--txt3);text-align:left;border-bottom:1px solid var(--bdr);text-transform:uppercase;letter-spacing:.4px}
+.ftbl th{background:var(--sur);font-size:10px;font-weight:700;padding:8px 12px;color:var(--txt3);text-align:left;border-bottom:1px solid var(--bdr);text-transform:uppercase;letter-spacing:.4px}
 .ftbl th:not(:first-child),.ftbl td:not(:first-child){text-align:right}
-.ftbl td{padding:7px 14px;border-top:1px solid var(--bdr);color:var(--txt);font-variant-numeric:tabular-nums}
+.ftbl td{padding:6px 12px;border-top:1px solid var(--bdr);color:var(--txt);font-variant-numeric:tabular-nums}
 .ftbl td:first-child{color:var(--txt3)}.ftbl .tr-tot td{font-weight:700;background:rgba(255,255,255,.02)}
-.sc{max-height:320px;overflow-y:auto}
+.sc{max-height:300px;overflow-y:auto}
 
-.ttbl{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:16px}
+/* ── TTBL (Take or Pay) ── */
+.ttbl{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
 .ttbl table{width:100%;font-size:12px;border-collapse:collapse}
-.ttbl th{background:var(--sur);color:var(--txt2);font-size:10px;font-weight:700;padding:10px 14px;text-align:left;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
+.ttbl th{background:var(--sur);color:var(--txt2);font-size:10px;font-weight:700;padding:9px 12px;text-align:left;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
 .ttbl th:not(:first-child){text-align:right}
-.ttbl td{padding:9px 14px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.ttbl td{padding:8px 12px;border-top:1px solid var(--bdr);font-variant-numeric:tabular-nums}
 .ttbl td:first-child{color:var(--txt2);font-weight:500}.ttbl td:not(:first-child){text-align:right;color:var(--txt)}
 .ttbl .tr-tot td{font-weight:700;background:rgba(255,255,255,.03);color:var(--txt)}
 .ttbl .fat{color:var(--red);font-weight:600}
 .ttbl input[type=number]{background:transparent;border:none;border-bottom:1px dashed var(--bdr2);color:var(--txt);font-size:12px;font-family:inherit;width:80px;text-align:right;outline:none}
 .ttbl input[type=number]:focus{border-bottom-color:var(--acc)}
 .iok{color:var(--green);font-weight:600}.iwarn{color:var(--amber);font-weight:600}.ibad{color:var(--red);font-weight:600}
-.trim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.trim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 
-/* CONFIG */
-.cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:24px}
-.cfg-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:22px}
-.cfg-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--bdr);color:var(--txt2)}
-.cfg-field{margin-bottom:14px}
-.cfg-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-.cfg-field input{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:8px 12px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
+/* ── CONFIG ── */
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:20px 24px}
+.cfg-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+.cfg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txt3);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--bdr)}
+.cfg-field{margin-bottom:12px}
+.cfg-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.cfg-field input{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:7px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
 .cfg-field input:focus{border-color:var(--acc)}
-.cfg-save{width:100%;padding:9px;background:var(--acc);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;transition:background .15s;letter-spacing:.2px}
-.cfg-save:hover{background:var(--acc-d)}
+.cfg-save{width:100%;padding:8px;background:var(--acc);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:2px}
+.cfg-save:hover{background:var(--acc2)}
 
-/* UPLOAD */
-.upl-page{padding:24px}
-.upl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.upl-title{font-size:14px;font-weight:600}
-.upl-warn{background:var(--amber-l);border:1px solid rgba(240,168,78,.25);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--amber);margin-bottom:20px}
-.upl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-.upl-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
-.upl-card-title{font-size:12px;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
-.upl-card-desc{font-size:11px;color:var(--txt3);margin-bottom:14px;line-height:1.5}
+/* ── UPLOAD ── */
+.upl-page{padding:20px 24px}
+.upl-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.upl-page-title{font-size:13px;font-weight:600;color:var(--txt)}
+.upl-warn{background:var(--amber-l);border:1px solid rgba(212,148,58,.2);border-radius:var(--r);padding:9px 14px;font-size:11px;color:var(--amber);margin-bottom:18px}
+.upl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.upl-card{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px}
+.upl-card-title{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--txt)}
+.upl-card-desc{font-size:11px;color:var(--txt3);margin-bottom:12px;line-height:1.5}
 .upl-card-desc.warn{color:var(--amber)}
-.upl-drop{border:1px dashed var(--bdr2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--sur3)}
+.upl-drop{border:1px dashed var(--bdr2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--sur3)}
 .upl-drop:hover{border-color:var(--acc);background:var(--acc-l)}
 .upl-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upl-drop-icon{font-size:22px;margin-bottom:8px;opacity:.7}
-.upl-drop-text{font-size:11px;color:var(--txt3)}.upl-drop-text strong{color:var(--acc)}
-.upl-drop-name{font-size:10px;color:var(--txt3);margin-top:4px;opacity:.7}
-.upl-clear{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--red-l);color:var(--red);border:1px solid rgba(240,107,107,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:12px}
-.upl-prog{margin-top:8px;font-size:11px;min-height:18px;color:var(--txt3)}
+.upl-drop-icon{font-size:20px;margin-bottom:6px;opacity:.6}
+.upl-drop-text{font-size:11px;color:var(--txt3)}.upl-drop-text strong{color:var(--acc);font-weight:600}
+.upl-drop-name{font-size:10px;color:var(--txt3);margin-top:3px;opacity:.6}
+.upl-clear{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--red-l);color:var(--red);border:1px solid rgba(224,92,92,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;font-weight:500}
+.upl-prog{margin-top:7px;font-size:11px;min-height:16px;color:var(--txt3)}
 .upl-prog.ok{color:var(--green)}.upl-prog.err{color:var(--red)}
 
-/* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal{background:var(--sur2);border:1px solid var(--bdr2);border-radius:var(--r3);padding:28px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.modal-title{font-size:14px;font-weight:600;margin-bottom:6px}
-.modal-sub{font-size:11px;color:var(--txt3);margin-bottom:18px;line-height:1.5}
-.modal-field{margin-bottom:14px}
-.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-.modal-field select,.modal-field input[type=date]{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:8px 12px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
-.modal-field select:focus,.modal-field input[type=date]:focus{border-color:var(--acc)}
-.modal-btns{display:flex;gap:8px;margin-top:20px}
-.modal-btn{flex:1;padding:10px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
-.modal-btn.cancel{background:var(--sur3);color:var(--txt2);border:1px solid var(--bdr)}.modal-btn.cancel:hover{background:var(--bdr)}
-.modal-btn.confirm{background:var(--acc);color:#fff}.modal-btn.confirm:hover{background:var(--acc-d)}
+.modal{background:var(--sur2);border:1px solid var(--bdr2);border-radius:var(--r3);padding:26px;width:370px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--txt3);margin-bottom:16px;line-height:1.5}
+.modal-field{margin-bottom:12px}
+.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--txt3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.modal-field select,.modal-field input[type=date]{width:100%;background:var(--sur3);border:1px solid var(--bdr);color:var(--txt);padding:7px 10px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none}
+.modal-btns{display:flex;gap:8px;margin-top:18px}
+.modal-btn{flex:1;padding:9px;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal-btn.cancel{background:var(--sur3);color:var(--txt2);border:1px solid var(--bdr)}
+.modal-btn.confirm{background:var(--acc);color:#fff}
 
-/* LOADING */
-.ld{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(2px)}
+/* ── LOADING ── */
+.ld{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px}
 .ld.show{display:flex}
-.spin{width:34px;height:34px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite}
+.spin{width:30px;height:30px;border:2px solid rgba(255,255,255,.08);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.ltxt{color:var(--txt2);font-size:12px;font-weight:500;letter-spacing:.2px}
+.ltxt{color:var(--txt2);font-size:12px;font-weight:500}
 
-/* MISC */
+/* ── MISC ── */
 .ferro-filter{display:none}
-.clear-all-btn{padding:7px 14px;background:var(--red-l);color:var(--red);border:1px solid rgba(240,107,107,.25);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;transition:background .15s}
-.clear-all-btn:hover{background:rgba(240,107,107,.2)}
+.clear-all-btn{padding:6px 14px;background:var(--red-l);color:var(--red);border:1px solid rgba(224,92,92,.2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
 
-@media(max-width:700px){.t3{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}.trim-grid{grid-template-columns:1fr}.term-tabs{padding:16px 16px 0}.page{padding:0 16px 40px}}
+@media(max-width:768px){
+  .t3{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .trim-grid{grid-template-columns:1fr}
+  .page-inner{padding:16px 16px 32px}
+}
 </style>
 </head>
 <body>
@@ -198,75 +209,80 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 </div>
 
-<nav class="nav">
-  <div class="nav-logo">OPERAÇÕES LOGÍSTICA</div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('terminais',this)">Terminais</button>
-    <button class="nav-tab" onclick="showPage('ferrovia',this)">Ferrovia</button>
-    <button class="nav-tab" onclick="showPage('top',this)">Take or Pay</button>
-    <button class="nav-tab" onclick="showPage('config',this)">Configurações</button>
-    <button class="nav-tab" onclick="showPage('upload',this)">↑ Upload Dados</button>
+<nav class="topbar">
+  <div class="topbar-logo">Operações Logística</div>
+  <div class="topbar-tabs">
+    <button class="topbar-tab active" onclick="showPage('terminais',this)">Terminais</button>
+    <button class="topbar-tab" onclick="showPage('ferrovia',this)">Ferrovia</button>
+    <button class="topbar-tab" onclick="showPage('top',this)">Take or Pay</button>
+    <button class="topbar-tab" onclick="showPage('config',this)">Configurações</button>
+    <button class="topbar-tab" onclick="showPage('upload',this)">↑ Upload Dados</button>
   </div>
-  <div class="nav-right" id="ubadge">—</div>
+  <div class="topbar-right" id="ubadge">—</div>
 </nav>
-
-<div class="month-bar">
-  <span class="month-label">Filtro Mês:</span>
-  <select class="month-select" id="monthFilter" onchange="onMonthChange()">
+<div class="subbar">
+  <span class="subbar-label">Filtro Mês</span>
+  <select class="subbar-select" id="monthFilter" onchange="onMonthChange()">
     <option value="">Mês atual</option>
   </select>
 </div>
 
 <!-- TERMINAIS -->
 <div id="page-terminais" class="page active">
-  <div class="term-tabs">
-    <button class="term-tab active" onclick="showTerm('teciap',this)">Teciap</button>
-    <button class="term-tab" onclick="showTerm('ultra',this)">Ultracargo RO</button>
-    <button class="term-tab" onclick="showTerm('centro',this)">Centroeste</button>
-  </div>
-  <div id="term-teciap" class="term-content">
-    <div class="kpi-grid" id="kpi-teciap"></div>
-    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-td"></canvas></div></div>
-    <div class="sec">Carregamentos — Rodo / Ferro / Transf</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-tc"></canvas></div></div>
-    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-te"></canvas></div></div>
-    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-teciap"></div>
-    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-teciap"></div>
-  </div>
-  <div id="term-ultra" class="term-content" style="display:none">
-    <div class="kpi-grid" id="kpi-ultra"></div>
-    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ud"></canvas></div></div>
-    <div class="sec">Carregamentos — Ferro</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-uc"></canvas></div></div>
-    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ue"></canvas></div></div>
-    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-ultra"></div>
-    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-ultra"></div>
-  </div>
-  <div id="term-centro" class="term-content" style="display:none">
-    <div class="kpi-grid" id="kpi-centro"></div>
-    <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cd"></canvas></div></div>
-    <div class="sec">Carregamento VT</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-cc"></canvas></div></div>
-    <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ce"></canvas></div></div>
-    <div class="sec">Carregamento Usina</div><div class="t3" id="usina-centro"></div>
-    <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-centro"></div>
+  <div class="page-inner">
+    <div class="term-tabs">
+      <button class="term-tab active" onclick="showTerm('teciap',this)">Teciap</button>
+      <button class="term-tab" onclick="showTerm('ultra',this)">Ultracargo RO</button>
+      <button class="term-tab" onclick="showTerm('centro',this)">Centroeste</button>
+    </div>
+    <div id="term-teciap" class="term-body">
+      <div class="kpi-grid" id="kpi-teciap"></div>
+      <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-td"></canvas></div></div>
+      <div class="sec">Carregamentos — Rodo / Ferro / Transf</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-tc"></canvas></div></div>
+      <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-te"></canvas></div></div>
+      <div class="sec">Carregamento Usina</div><div class="t3" id="usina-teciap"></div>
+      <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-teciap"></div>
+    </div>
+    <div id="term-ultra" class="term-body" style="display:none">
+      <div class="kpi-grid" id="kpi-ultra"></div>
+      <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ud"></canvas></div></div>
+      <div class="sec">Carregamentos — Ferro</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-uc"></canvas></div></div>
+      <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ue"></canvas></div></div>
+      <div class="sec">Carregamento Usina</div><div class="t3" id="usina-ultra"></div>
+      <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-ultra"></div>
+    </div>
+    <div id="term-centro" class="term-body" style="display:none">
+      <div class="kpi-grid" id="kpi-centro"></div>
+      <div class="sec">Descarga Rodoviária</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-cd"></canvas></div></div>
+      <div class="sec">Carregamento VT</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-cc"></canvas></div></div>
+      <div class="sec">Abertura de Estoque</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-ce"></canvas></div></div>
+      <div class="sec">Carregamento Usina</div><div class="t3" id="usina-centro"></div>
+      <div class="sec">Quebra Mensal</div><div class="ftbl" id="quebra-centro"></div>
+    </div>
   </div>
 </div>
 
 <!-- FERROVIA -->
-<div id="page-ferrovia" class="page" style="padding:20px">
-  <div class="kpi-grid" id="kpi-ferro"></div>
-  <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fc"></canvas></div></div>
-  <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fd"></canvas></div></div>
-  <div id="ferro-filter" style="display:none"></div>
-  <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
+<div id="page-ferrovia" class="page">
+  <div class="page-inner">
+    <div class="kpi-grid" id="kpi-ferro"></div>
+    <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fc"></canvas></div></div>
+    <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fd"></canvas></div></div>
+    <div id="ferro-filter" style="display:none"></div>
+    <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
+  </div>
 </div>
 
 <!-- TAKE OR PAY -->
-<div id="page-top" class="page" style="padding:20px">
-  <div class="sec">Anual</div><div class="ttbl" id="top-anual"></div>
-  <div class="trim-grid">
-    <div><div class="sec">1º Trimestre</div><div class="ttbl" id="top-t1"></div></div>
-    <div><div class="sec">2º Trimestre</div><div class="ttbl" id="top-t2"></div></div>
-    <div><div class="sec">3º Trimestre</div><div class="ttbl" id="top-t3"></div></div>
-    <div><div class="sec">4º Trimestre</div><div class="ttbl" id="top-t4"></div></div>
+<div id="page-top" class="page">
+  <div class="page-inner">
+    <div class="sec">Anual</div><div class="ttbl" id="top-anual"></div>
+    <div class="trim-grid">
+      <div><div class="sec">1º Trimestre</div><div class="ttbl" id="top-t1"></div></div>
+      <div><div class="sec">2º Trimestre</div><div class="ttbl" id="top-t2"></div></div>
+      <div><div class="sec">3º Trimestre</div><div class="ttbl" id="top-t3"></div></div>
+      <div><div class="sec">4º Trimestre</div><div class="ttbl" id="top-t4"></div></div>
+    </div>
   </div>
 </div>
 
@@ -275,21 +291,21 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="cfg-grid">
     <div class="cfg-card"><div class="cfg-title">Teciap</div>
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-t-top" value="35000"></div>
-      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-t-hid" value="6000"></div>
-      <div class="cfg-field"><label>Estática Contratada — Anidro (m³)</label><input type="number" id="cfg-t-ani" value="1000"></div>
+      <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-t-hid" value="6000"></div>
+      <div class="cfg-field"><label>Estática — Anidro (m³)</label><input type="number" id="cfg-t-ani" value="1000"></div>
       <button class="cfg-save" onclick="saveConfig('teciap')">Salvar Teciap</button>
     </div>
     <div class="cfg-card"><div class="cfg-title">Ultracargo RO</div>
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-u-top" value="25000"></div>
-      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-u-hid" value="5000"></div>
+      <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-u-hid" value="5000"></div>
       <button class="cfg-save" onclick="saveConfig('ultra')">Salvar Ultracargo</button>
     </div>
     <div class="cfg-card"><div class="cfg-title">Centroeste</div>
       <div class="cfg-field"><label>Take or Pay / Mês (m³)</label><input type="number" id="cfg-c-top" value="29417"></div>
-      <div class="cfg-field"><label>Estática Contratada — Hidratado (m³)</label><input type="number" id="cfg-c-hid" value="1250"></div>
+      <div class="cfg-field"><label>Estática — Hidratado (m³)</label><input type="number" id="cfg-c-hid" value="1250"></div>
       <button class="cfg-save" onclick="saveConfig('centro')">Salvar Centroeste</button>
     </div>
-    <div class="cfg-card"><div class="cfg-title">Ferrovia (Rumo)</div>
+    <div class="cfg-card"><div class="cfg-title">Ferrovia — Rumo</div>
       <div class="cfg-field"><label>Contrato Transporte / Mês (m³)</label><input type="number" id="cfg-f-ct" value="88350"></div>
       <div class="cfg-field"><label>Mínimo Contratual / Mês (m³)</label><input type="number" id="cfg-f-min" value="83933"></div>
       <button class="cfg-save" onclick="saveConfig('ferro')">Salvar Ferrovia</button>
@@ -300,8 +316,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- UPLOAD -->
 <div id="page-upload" class="page">
   <div class="upl-page">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:14px;font-weight:600">Upload de Dados</div>
+    <div class="upl-topbar">
+      <div class="upl-page-title">Upload de Dados</div>
       <button class="clear-all-btn" onclick="clearAll()">🗑️ Limpar Todos os Dados</button>
     </div>
     <div class="upl-warn">⚠️ Apenas registros novos são adicionados — duplicatas são ignoradas automaticamente.</div>
@@ -1551,7 +1567,7 @@ function renderTOP(D){
 
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.topbar-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
 }
 function showTerm(id,btn){
