@@ -272,7 +272,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="kpi-grid" id="kpi-ferro"></div>
     <div class="sec">Carregamento Ferroviário — Teciap / Ultracargo</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fc"></canvas></div></div>
     <div class="sec">Descarga Ferroviária — Terminais</div><div class="chart-card"><div class="chart-wrap-vt"><canvas id="ch-fd"></canvas></div></div>
-    <div class="sec">Previsão Descarga nos Terminais (Faturamento +5 dias)</div><div class="chart-card"><div class="chart-wrap"><canvas id="ch-fp"></canvas></div></div>
+    <div class="sec">Previsão Descarga nos Terminais (Faturamento +5 dias)</div><div class="chart-card"><div class="chart-wrap" style="height:210px"><canvas id="ch-fp"></canvas></div></div>
     <div id="ferro-filter" style="display:none"></div>
     <div class="sec">Carregamento por Destino</div><div class="ftbl sc" id="tbl-ferro"></div>
   </div>
@@ -1085,6 +1085,16 @@ function getMonthData(){
     return m;
   }
 
+  // Desc by day por filial (Sinop GEF=1, Mutum GEF=3)
+  function descByDaySplit(cod){
+    const s={},mu={};
+    desc.filter(r=>r.cliente===cod).forEach(r=>{
+      if(r.gefF==='1')s[r.dia]=(s[r.dia]||0)+r.pesoDestino;
+      else if(r.gefF==='3')mu[r.dia]=(mu[r.dia]||0)+r.pesoDestino;
+    });
+    return{sinop:s,mutum:mu};
+  }
+
   // Desc by day
   function descByDay(cod){
     const m={};
@@ -1176,13 +1186,15 @@ function getMonthData(){
     ferroDescBD[r.dia]=(ferroDescBD[r.dia]||0)+r.pesoDestino;
   });
 
-  // Carregamento por cliente destino (NF exp com RUMO) — dinâmico, sem lista fixa
+  // Carregamento por cliente destino — nome completo, dinâmico
+  const CLI_NOMES_FIXOS={11966:'Logum Logística SA',7605:'Terminal Paulínia SA',3492:'Tercom'};
   function nfByClient(){
     const m={};
     nfExp.filter(r=>DEP_CIF.includes(r.dep)&&r.codTransp===RUMO).forEach(r=>{
-      const nomeCurto=r.nomeCliente.split(' ').slice(0,2).join(' ');
-      if(!m[nomeCurto])m[nomeCurto]={cod:r.codCliente,byDay:{}};
-      m[nomeCurto].byDay[r.dia]=(m[nomeCurto].byDay[r.dia]||0)+r.qtde;
+      // Usar nome fixo conhecido ou nome completo da NF
+      const nome=CLI_NOMES_FIXOS[r.codCliente]||r.nomeCliente||'Cliente '+r.codCliente;
+      if(!m[nome])m[nome]={cod:r.codCliente,byDay:{}};
+      m[nome].byDay[r.dia]=(m[nome].byDay[r.dia]||0)+r.qtde;
     });
     return m;
   }
@@ -1231,6 +1243,19 @@ function getMonthData(){
     previsaoDescTermBD[diff]=(previsaoDescTermBD[diff]||0)+r.qtde;
   });
 
+  // Estoque anidro histórico (só TECIAP tem anidro)
+  function estAniHistByDay(){
+    const m={};
+    estKeys.forEach(k=>{
+      const[dtStr,prod]=k.split('_');
+      if(prod!=='ani')return;
+      const dt=new Date(dtStr+'T00:00:00');
+      const d=dt.getDate();
+      m[d]=STATE.est[k].teciap_ani_ab||0;
+    });
+    return m;
+  }
+
   return{
     dias_mes:diasMes,diaHoje,year,month,
     t:{rec:tRec,expFerro:nfTotal(DEP_T,RUMO),expRodo:nfTotal(DEP_T)-nfTotal(DEP_T,RUMO)-nfTotal(DEP_T,null)+nfTotal(DEP_T)-nfTotal(DEP_T,RUMO),
@@ -1239,21 +1264,21 @@ function getMonthData(){
        estHid:STATE.config.teciap.hid,estAni:STATE.config.teciap.ani,hidFe:estHid.teciap_hid_fe||0,aniFe:estAni.teciap_ani_fe||0,
        giro:tRec/((STATE.config.teciap.hid||1)+(STATE.config.teciap.ani||0)),
        custo:tRec*(STATE.config.teciap.tarifa||0),tarifa:STATE.config.teciap.tarifa||0,
-       descBD:tBD,carrBD:nfByDay(DEP_T),estBD:estHistByDay('t_hid'),
+       descBD:tBD,descSplit:descByDaySplit(CLI_T),carrBD:nfByDay(DEP_T),estBD:estHistByDay('t_hid'),estAniBD:estAniHistByDay(),
        quebra:quebra(CLI_T),usinaReal:usinaReal(CLI_T),usinaPrevisao:usinaPrevisao(CLI_T)},
     u:{rec:uRec,exp:nfTotal(DEP_U),ct:STATE.config.ultra.top,saldo:uRec-STATE.config.ultra.top,
        backlog:calcBacklog(uBD,STATE.config.ultra.top),proj:calcVolProj(uBD),trans:transCod(CLI_U),
        estHid:STATE.config.ultra.hid,hidFe:estHid.ultra_hid_fe||0,
        giro:uRec/(STATE.config.ultra.hid||1),
        custo:uRec*(STATE.config.ultra.tarifa||0),tarifa:STATE.config.ultra.tarifa||0,
-       descBD:uBD,carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
+       descBD:uBD,descSplit:descByDaySplit(CLI_U),carrBD:nfByDay(DEP_U),estBD:estHistByDay('u_hid'),
        quebra:quebra(CLI_U),usinaReal:usinaReal(CLI_U),usinaPrevisao:usinaPrevisao(CLI_U)},
     c:{rec:cRec,exp:cExp,ct:STATE.config.centro.top,saldo:cExp-STATE.config.centro.top,
        backlog:calcBacklog(cExpBD,STATE.config.centro.top),proj:calcVolProj(cExpBD),trans:transCod(CLI_C),
        estHid:STATE.config.centro.hid,hidFe:estHid.centro_hid_fe||0,
        giro:cRec/(STATE.config.centro.hid||1),
        custo:cRec*(STATE.config.centro.tarifa||0),tarifa:STATE.config.centro.tarifa||0,
-       descBD:cBD,carrBD:cExpBD,estBD:estHistByDay('c_hid'),
+       descBD:cBD,descSplit:descByDaySplit(CLI_C),carrBD:cExpBD,estBD:estHistByDay('c_hid'),
        quebra:quebra(CLI_C),usinaReal:usinaReal(CLI_C),usinaPrevisao:usinaPrevisao(CLI_C)},
     ferro:{carrTotal:ferroTotal,descTotal:ferroDescTotal,ct:ferroCt,min:ferroMin,
            saldoCt:ferroTotal-ferroCt,backlog:calcBacklog(ferroCarrBD,ferroCt),
@@ -1270,6 +1295,75 @@ function renderAll(){
   if(!STATE.nf.length&&!STATE.desc.length)return;
   const D=getMonthData();window._D=D;
   renderTerminal(D);renderFerrovia(D);renderTOP(D);updateMonthFilter();
+}
+
+// Gráfico com 2 datasets: Sinop (azul) + Mutum (preto) + legenda
+function mkC2(id,labels,dataSinop,dataMutum){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const el=document.getElementById(id);if(!el)return;
+  const COL_S='#1e4fbd'; // Sinop — azul
+  const COL_M='#1a1a2e'; // Mutum — preto/navy
+  function topLabelPlugin(datasets){
+    return{id:'top2',afterDatasetsDraw(chart){
+      const{ctx,scales:{x,y}}=chart;ctx.save();
+      ctx.font='bold 8px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      datasets.forEach((ds,di)=>{
+        ds.data.forEach((v,i)=>{
+          if(!v||v<=0)return;
+          const meta=chart.getDatasetMeta(di);
+          const bar=meta.data[i];
+          ctx.fillStyle=di===0?COL_S:COL_M;
+          const lbl=v>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
+          ctx.fillText(lbl,bar.x,bar.y-2);
+        });
+      });ctx.restore();
+    }};
+  }
+  const datasets=[
+    {label:'Sinop',data:dataSinop,backgroundColor:dataSinop.map(v=>v>0?COL_S:'rgba(0,0,0,.03)'),borderRadius:2,barPercentage:.45,categoryPercentage:.9},
+    {label:'N.Mutum',data:dataMutum,backgroundColor:dataMutum.map(v=>v>0?COL_M:'rgba(0,0,0,.03)'),borderRadius:2,barPercentage:.45,categoryPercentage:.9}
+  ];
+  CH[id]=new Chart(el,{type:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,color:'#4a5475',font:{size:11,weight:'600'},usePointStyle:true,pointStyle:'rect'}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y,0)+' m³'}}
+      },
+      scales:{
+        x:{ticks:{color:'#8690aa',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#8690aa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}
+      }
+    },
+    plugins:[topLabelPlugin(datasets)]
+  });
+}
+
+// Gráfico estoque com 2 datasets: Hidratado (azul) + Anidro (preto)
+function mkCEst2(id,labels,dataHid,dataAni){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const el=document.getElementById(id);if(!el)return;
+  const COL_H='#2d6adf';const COL_A='#1a1a2e';
+  const hasAni=dataAni.some(v=>v>0);
+  const datasets=[
+    {label:'Hidratado',data:dataHid,backgroundColor:dataHid.map(v=>v>0?COL_H:'rgba(0,0,0,.03)'),borderRadius:2,barPercentage:hasAni?.45:.7,categoryPercentage:.9},
+    ...(hasAni?[{label:'Anidro',data:dataAni,backgroundColor:dataAni.map(v=>v>0?COL_A:'rgba(0,0,0,.03)'),borderRadius:2,barPercentage:.45,categoryPercentage:.9}]:[])
+  ];
+  CH[id]=new Chart(el,{type:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,color:'#4a5475',font:{size:11,weight:'600'},usePointStyle:true,pointStyle:'rect'}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y,0)+' m³'}}
+      },
+      scales:{
+        x:{ticks:{color:'#8690aa',font:{size:9},autoSkip:true,maxRotation:0},grid:{display:false}},
+        y:{ticks:{color:'#8690aa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}
+      }
+    }
+  });
 }
 
 function mkC(id,labels,data,color){
@@ -1310,22 +1404,43 @@ function mkC(id,labels,data,color){
   });
 }
 
-// Gráfico Previsão Descarga nos Terminais: eixo D-5..D+10
+// Gráfico Previsão Descarga nos Terminais: eixo com data real de chegada
 function mkCPrev(id,byDiff){
   if(CH[id]){CH[id].destroy();delete CH[id];}
   const el=document.getElementById(id);if(!el)return;
   const offsets=[-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10];
-  const labels=offsets.map(d=>d===0?'D':d>0?'D+'+d:'D'+d);
+  const today=new Date();
+  // Gerar label com D+offset E data real (dd/MM)
+  const labels=offsets.map(d=>{
+    const dt=addDays(today,d);
+    const dd=String(dt.getDate()).padStart(2,'0');
+    const mm=String(dt.getMonth()+1).padStart(2,'0');
+    const tag=d===0?'D':d>0?'D+'+d:'D'+d;
+    return [tag, dd+'/'+mm]; // array = duas linhas no eixo X
+  });
   const data=offsets.map(d=>byDiff[d]||0);
-  const colors=offsets.map(d=>d<0?'rgba(224,92,92,.6)':d===0?'#4d7ef5':'rgba(77,126,245,.5)');
+  const colors=offsets.map(d=>d<0?'rgba(192,57,43,.55)':d===0?'#1e4fbd':'rgba(30,79,189,.45)');
   CH[id]=new Chart(el,{type:'bar',
     data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:22}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y,0)+' m³'}}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:items=>{
+            const idx=items[0].dataIndex;
+            const dt=addDays(today,offsets[idx]);
+            const dd=String(dt.getDate()).padStart(2,'0');
+            const mm=String(dt.getMonth()+1).padStart(2,'0');
+            const tag=offsets[idx]===0?'D':offsets[idx]>0?'D+'+offsets[idx]:'D'+offsets[idx];
+            return tag+' — '+dd+'/'+mm+'/'+dt.getFullYear();
+          },
+          label:c=>fmt(c.parsed.y,0)+' m³ previstos'
+        }}
+      },
       scales:{
-        x:{ticks:{color:'#6b728f',font:{size:9}},grid:{display:false}},
-        y:{ticks:{color:'#6b728f',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.06)'},beginAtZero:true}
+        x:{ticks:{color:'#8690aa',font:{size:9},maxRotation:0,autoSkip:false},grid:{display:false}},
+        y:{ticks:{color:'#8690aa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':fmt(v)},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}
       }
     },
     plugins:[{id:'prevLabels',afterDatasetsDraw(chart){
@@ -1334,7 +1449,7 @@ function mkCPrev(id,byDiff){
       d.datasets[0].data.forEach((v,i)=>{
         if(!v||v<=0)return;
         const lbl=v>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
-        ctx.fillStyle='#6b728f';
+        ctx.fillStyle='#4a5475';
         ctx.fillText(lbl,x.getPixelForValue(i),y.getPixelForValue(v)-2);
       });ctx.restore();
     }}]
@@ -1475,14 +1590,16 @@ function renderTerminal(D){
     {l:'Backlog/dia Recebimento (m³)',v:fmt(D.t.backlog,0),c:D.t.backlog<0?'neg':'pos'},
     {l:'Volume Projetado | Recebimento',v:fmt(D.t.proj,0)},
     {l:'Trânsito Caminhões para Teciap (m³)',v:fmt(D.t.trans,0)},
-    {l:'Estática Contratada | Hidratado',v:fmt(cfg.teciap.hid,0),sl:'Estática Contratada | Anidro',sv:fmt(cfg.teciap.ani,0)},
-    {l:'Estoque atual | Hidratado (m³)',v:fmt(D.t.hidFe,0),sl:'Estoque atual | Anidro (m³)',sv:fmt(D.t.aniFe,0)},
+    {l:'Estática Contratada | Hidratado',v:fmt(cfg.teciap.hid,0)},
+    {l:'Estática Contratada | Anidro',v:fmt(cfg.teciap.ani,0)},
+    {l:'Estoque atual | Hidratado (m³)',v:fmt(D.t.hidFe,0)},
+    {l:'Estoque atual | Anidro (m³)',v:fmt(D.t.aniFe,0)},
     {l:'Giro',v:fmt(D.t.giro,2)},
     {l:'Previsão Custo Mês',v:'R$ '+fmt(D.t.custo,0),sl:fmt(D.t.rec,0)+' m³ × R$ '+D.t.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-td',L,bda(D.t.descBD,D),'#1e4fbd');
-  mkCVT('ch-tc',L,bda(D.t.carrBD,D),'#1a9e5c');
-  mkC('ch-te',L,bda(D.t.estBD,D),'#2d6adf');
+  mkC2('ch-td',L,bda(D.t.descSplit.sinop,D),bda(D.t.descSplit.mutum,D));
+  mkCVT('ch-tc',L,bda(D.t.carrBD,D),'#e6a817'); // TECIAP — amarelo
+  mkCEst2('ch-te',L,bda(D.t.estBD,D),bda(D.t.estAniBD,D));
   rUsina('usina-teciap',D.t.usinaReal,D.t.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-teciap',D.t.quebra);
 
@@ -1502,9 +1619,9 @@ function renderTerminal(D){
     {l:'Giro',v:fmt(D.u.giro,2)},
     {l:'Previsão Custo Mês',v:'R$ '+fmt(D.u.custo,0),sl:fmt(D.u.rec,0)+' m³ × R$ '+D.u.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-ud',L,bda(D.u.descBD,D),'#1e4fbd');
-  mkCVT('ch-uc',L,bda(D.u.carrBD,D),'#1a9e5c');
-  mkC('ch-ue',L,bda(D.u.estBD,D),'#2d6adf');
+  mkC2('ch-ud',L,bda(D.u.descSplit.sinop,D),bda(D.u.descSplit.mutum,D));
+  mkCVT('ch-uc',L,bda(D.u.carrBD,D),'#0a1f5c'); // ULTRACARGO — azul bem escuro
+  mkCEst2('ch-ue',L,bda(D.u.estBD,D),[]);
   rUsina('usina-ultra',D.u.usinaReal,D.u.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-ultra',D.u.quebra);
 
@@ -1526,9 +1643,9 @@ function renderTerminal(D){
     {l:'Giro',v:fmt(D.c.giro,2)},
     {l:'Previsão Custo Mês',v:'R$ '+fmt(D.c.custo,0),sl:fmt(D.c.rec,0)+' m³ × R$ '+D.c.tarifa.toFixed(2)+'/m³',sv:''}
   ]);
-  mkC('ch-cd',L,bda(D.c.descBD,D),'#1e4fbd');
-  mkCVT('ch-cc',L,bda(D.c.carrBD,D),'#1a9e5c');
-  mkC('ch-ce',L,bda(D.c.estBD,D),'#2d6adf');
+  mkC2('ch-cd',L,bda(D.c.descSplit.sinop,D),bda(D.c.descSplit.mutum,D));
+  mkCVT('ch-cc',L,bda(D.c.carrBD,D),'#6b21a8'); // CENTROESTE — roxo
+  mkCEst2('ch-ce',L,bda(D.c.estBD,D),[]);
   rUsina('usina-centro',D.c.usinaReal,D.c.usinaPrevisao,D.diaHoje-1,D.month);
   rQuebra('quebra-centro',D.c.quebra);
 }
